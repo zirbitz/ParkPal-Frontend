@@ -12,7 +12,6 @@ import OffCanvas from "@/components/OffCanvas.vue";
     <Navbar />
   </header>
   <main>
-    <OffCanvas />
     <Breadcrumb />
     <router-view />
     <Footer />
