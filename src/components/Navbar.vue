@@ -7,7 +7,7 @@
     <div class="container">
       <router-link :to="{ name:'Home' }" class="navbar-brand">
         <router-link class="navbar-brand" :to="{ name:'Home' }">
-          <img id="LogoParkpal" src="../assets/images/Parkpal.png" alt="Park Pal Logo">
+          <img id="LogoParkpal" src="../assets/icons/Parkpal_Logo.svg" alt="Park Pal Logo">
           Park Pal Blog
         </router-link>
       </router-link>
