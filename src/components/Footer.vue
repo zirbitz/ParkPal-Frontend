@@ -5,35 +5,48 @@ import Faq from "@/components/info/Faq.vue";
 
 <template>
   <footer id="myFooter">
-    <div class="container">
+    <div class="container footer-custom">
       <footer class="py-5">
         <div class="row">
           <div class="col-6 col-md-2 mb-3">
             <h5>Events</h5>
             <ul class="nav flex-column">
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Overview</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Filter Events</a></li>
-              <br>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Create Event</a></li>
+
+              <li class="nav-item mb-2">
+                <router-link :to="{name:'EventOverview'}" class="footer-item">Overview</router-link>
+              </li>
+              <li class="nav-item mb-2">
+                <router-link :to="{name:'EventFilter'}" class="footer-item">Filter</router-link>
+              </li>
+              <li class="nav-item mb-2">
+                <router-link :to="{name:'CreateEvent'}" class="footer-item">CreateEvent</router-link>
+              </li>
             </ul>
           </div>
 
           <div class="col-6 col-md-2 mb-3">
             <h5>User</h5>
             <ul class="nav flex-column">
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Login</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Register</a></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Dashboard</a></li>
+              <li class="nav-item mb-2">
+                <router-link :to="{name:'Login'}" class="footer-item">Login</router-link>
+              </li>
+              <li class="nav-item mb-2">
+                <router-link :to="{name:'Register'}" class="footer-item">Register</router-link>
+              </li>
+              <li class="nav-item mb-2">
+                <router-link :to="{name:'UserDashboard'}" class="footer-item">Dashboard</router-link>
+              </li>
             </ul>
           </div>
 
           <div class="col-6 col-md-2 mb-3">
             <h5>ParkPal</h5>
             <ul class="nav flex-column">
-              <li class="nav-item mb-2"><router-link :to="{ name:'Home' }" class="nav-link p-0 text-muted">Home</router-link></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Parks</a></li>
-              <li class="nav-item mb-2"><router-link :to="{ name:'Fag' }" class="nav-link p-0 text-muted">FAQs</router-link></li>
-              <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Impressum</a></li>
+              <li class="nav-item mb-2"><router-link :to="{ name:'Home' }" class="footer-item">Home</router-link></li>
+              <li class="nav-item mb-2"><router-link :to="{ name:'ParksOverview' }" class="footer-item">Parks</router-link></li>
+              <li class="nav-item mb-2"><router-link :to="{ name:'Faq' }" class="footer-item">FAQs</router-link></li>
+              <li class="nav-item mb-2"><router-link :to="{ name:'Impressum' }" class="footer-item">Impressum</router-link></li>
+
             </ul>
           </div>
 
@@ -54,9 +67,21 @@ import Faq from "@/components/info/Faq.vue";
         <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top">
           <p>&copy; {{ new Date().getFullYear() }} ParkPal Inc. All rights reserved.</p>
           <ul class="list-unstyled d-flex">
-            <li class="ms-3"><a class="link-dark" href="#"><svg class="bi" width="24" height="24"><use xlink:href="#twitter"/></svg></a></li>
-            <li class="ms-3"><a class="link-dark" href="#"><svg class="bi" width="24" height="24"><use xlink:href="#instagram"/></svg></a></li>
-            <li class="ms-3"><a class="link-dark" href="#"><svg class="bi" width="24" height="24"><use xlink:href="#facebook"/></svg></a></li>
+            <li class="ms-3">
+              <a class="link-dark" href="https://twitter.com" target="_blank" aria-label="Link to Twitter">
+                <i class="bi bi-twitter" style="font-size: 24px;"></i>
+              </a>
+            </li>
+            <li class="ms-3">
+              <a class="link-dark" href="https://instagram.com" target="_blank" aria-label="Link to Instagram">
+                <i class="bi bi-instagram" style="font-size: 24px;"></i>
+              </a>
+            </li>
+            <li class="ms-3">
+              <a class="link-dark" href="https://facebook.com" target="_blank" aria-label="Link to Facebook">
+                <i class="bi bi-facebook" style="font-size: 24px;"></i>
+              </a>
+            </li>
           </ul>
         </div>
       </footer>

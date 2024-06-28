@@ -6,7 +6,9 @@ import Login from "@/components/user/Login.vue";
 import ParksOverview from "@/components/park/ParksOverview.vue";
 import Register from "@/components/user/Register.vue";
 import Faq from "@/components/info/Faq.vue";
-
+import EventFilter from "@/components/event/EventFilter.vue";
+import UserDashboard from "@/components/user/UserDashboard.vue";
+import Impressum from "@/components/Impressum.vue";
 
 const routes = [
     {
@@ -41,10 +43,24 @@ const routes = [
     },
     {
         path: "/faq",
-        name: "Fag",
+        name: "Faq",
         component: Faq
-    }
-    // add more routes here
+    },
+    {
+        path: "/eventFilter",
+        name: "EventFilter",
+        component: EventFilter
+    },
+    {
+        path: "/userDashboard",
+        name: "UserDashboard",
+        component: UserDashboard
+    },
+    {
+        path: "/impressum",
+        name: "Impressum",
+        component: Impressum
+    },
 ];
 
 const router = createRouter({
