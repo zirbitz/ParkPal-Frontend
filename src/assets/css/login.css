@@ -1,0 +1,62 @@
+.card {
+    background: #ffffff;
+    .card-logo {
+        align-items: center;
+        text-align: center;
+        margin:12px;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: #B00101;
+        color: whitesmoke;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+
+    }
+
+    .btn-primary .icon {
+        margin-left: 23px;
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/><path d="M10 8l4 4-4 4" fill="white"/></svg>')
+        no-repeat center;
+    }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: white;
+        color: #B00101;
+        border: solid 2px #B00101;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        text-decoration: none;
+    }
+
+    .btn-secondary .icon {
+        margin-left: 13px;
+        display: inline-block;
+        width: 27px;
+        height: 27px;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="%23B00101" stroke="white" stroke-width="2"/><path d="M10 8l4 4-4 4" fill="white"/></svg>') no-repeat center;
+        background-size: contain;
+    }
+
+    .login-info-text {
+        font-style: italic;
+        color: #B00101;
+        text-align: center;
+    }
+
+    .btn-outline-secondary {
+
+    }
+}
