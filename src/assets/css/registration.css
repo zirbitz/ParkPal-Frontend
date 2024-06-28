@@ -1,0 +1,48 @@
+.register-form {
+    margin-left: 8px;
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: #B00101;
+        color: whitesmoke;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 24px;
+
+    }
+
+    .btn-primary .icon {
+        margin-left: 23px;
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/><path d="M10 8l4 4-4 4" fill="white"/></svg>')
+        no-repeat center;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .register-row {
+        margin-top: 12px;
+    }
+
+    .sign-in-redirect {
+        .add-info {
+            text-align: center;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 18px;
+            border: 2px solid #B00101;
+            border-radius: 8px;
+            .add-text {
+                margin: 14px;
+            }
+        }
+
+    }
+}
