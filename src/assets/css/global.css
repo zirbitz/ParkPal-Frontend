@@ -2,6 +2,7 @@
 @import "nav.css";
 @import "logo.css";
 @import "login.css";
+@import "registration.css";
 
 body {
     background: #f5f5f5;
@@ -22,7 +23,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-primary {
     font-weight: bold;
     background: #B00101;
-    border: 2px solid black;
+    border: 1px solid black;
     --bs-btn-hover-bg: white;
     --bs-btn-hover-color: black;
     --bs-btn-hover-border-color: none;
