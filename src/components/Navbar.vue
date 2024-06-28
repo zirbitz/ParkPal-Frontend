@@ -3,12 +3,12 @@
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <nav class="navbar navbar-expand-lg">
     <div class="container">
       <router-link :to="{ name:'Home' }" class="navbar-brand">
         <router-link class="navbar-brand" :to="{ name:'Home' }">
           <img id="LogoParkpal" src="../assets/icons/Parkpal_Logo.svg" alt="Park Pal Logo">
-          Park Pal Blog
+          Park Pal
         </router-link>
       </router-link>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -61,7 +61,5 @@
 </template>
 
 <style scoped>
-.navbar {
-  background-color: #f5f5f5;
-}
+
 </style>

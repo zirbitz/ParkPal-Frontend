@@ -4,7 +4,9 @@
 
 <template>
   <div class="container">
-    <h1>Welcome to Park pal</h1>
+    <h1>
+      EventFilter
+    </h1>
   </div>
 </template>
 
