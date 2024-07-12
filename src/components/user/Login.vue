@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
 
 const email = ref('');
 const password = ref('');
@@ -9,10 +10,22 @@ const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value;
 };
 
-const submitForm = () => {
-  // Handle form submission logic here
-  console.log(`Email: ${email.value}, Password: ${password.value}`);
+const submitForm = async () => {
+  const loginData = {
+    username: email.value,
+    password: password.value
+  };
+
+  try {
+    const response = await axios.post('http://localhost:8080/auth/login', loginData);
+    console.log('Login successful:', response.data);
+    // Handle successful login here (e.g., redirecting the user or storing the login token)
+  } catch (error) {
+    console.error('Login failed:', error.response.data);
+    // Handle login failure here (e.g., showing an error message)
+  }
 };
+
 </script>
 
 
@@ -30,7 +43,7 @@ const submitForm = () => {
             <p class="login-info-text">Login to Create and Join Events</p>
             <form @submit.prevent="submitForm">
               <div class="mb-3">
-                <input type="email" class="form-control" id="email" placeholder="abc@example.com" v-model="email" aria-describedby="emailHelp">
+                <input type="text" class="form-control" id="email" placeholder="abc@example.com" v-model="email" aria-describedby="emailHelp">
               </div>
               <div class="mb-3">
                 <div class="input-group">
