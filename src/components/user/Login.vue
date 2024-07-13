@@ -1,34 +1,36 @@
-<script setup>
-import { ref } from 'vue';
+<script>
 import axios from 'axios';
 
-const email = ref('');
-const password = ref('');
-const showPassword = ref(false);
+export default {
+  data() {
+    return {
+      email: '',
+      password: '',
+      showPassword: false,
+    };
+  },
+  methods: {
+    togglePasswordVisibility() {
+      this.showPassword = !this.showPassword;
+    },
+    async submitForm() {
+      const loginData = {
+        username: this.email,
+        password: this.password
+      };
 
-const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value;
-};
-
-const submitForm = async () => {
-  const loginData = {
-    username: email.value,
-    password: password.value
-  };
-
-  try {
-    const response = await axios.post('http://localhost:8080/auth/login', loginData);
-    console.log('Login successful:', response.data);
-    // Handle successful login here (e.g., redirecting the user or storing the login token)
-  } catch (error) {
-    console.error('Login failed:', error.response.data);
-    // Handle login failure here (e.g., showing an error message)
+      try {
+        const response = await axios.post('http://localhost:8080/auth/login', loginData);
+        console.log('Login successful:', response.data);
+        // Handle successful login here (e.g., redirecting the user or storing the login token)
+      } catch (error) {
+        console.error('Login failed:', error.response.data);
+        // Handle login failure here (e.g., showing an error message)
+      }
+    }
   }
 };
-
 </script>
-
-
 
 <template>
   <div class="container">
@@ -95,5 +97,5 @@ const submitForm = async () => {
 </template>
 
 <style scoped>
-/* Add your scoped styles here */
+
 </style>

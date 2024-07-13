@@ -17,6 +17,11 @@ const routes = [
         component: Home
     },
     {
+        path: "/home",
+        name: "Home",
+        component: Home
+    },
+    {
         path: "/createEvent",
         name: "CreateEvent",
         component: CreateEvent

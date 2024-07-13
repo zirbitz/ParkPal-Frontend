@@ -1,6 +1,315 @@
+<script>
+import CountryService from "@/service/countryService.js";
+import axios from "axios";
+
+export default {
+  data() {
+    return {
+      genderOptions: ['FEMALE', 'MALE', 'OTHER'],
+      firstName: '',
+      lastName: '',
+      firstNameValid: false,
+      lastNameValid: false,
+      firstNameDirty: false,
+      lastNameDirty: false,
+      salutation: '',
+      gender: '',
+      salutationValid: false,
+      salutationDirty: false,
+      genderValid: false,
+      genderDirty: false,
+      email: '',
+      emailValid: false,
+      emailDirty: false,
+      username: '',
+      usernameValid: false,
+      usernameDirty: false,
+      password: '',
+      confirmPassword: '',
+      passwordError: '',
+      passwordsMatch: true,
+      showPassword: false,
+      showConfirmPassword: false,
+      country: '',
+      countries: [],
+      countryValid: false,
+      countryDirty: false,
+      address: '',
+      addressValid: false,
+      addressDirty: false,
+      city: '',
+      cityValid: false,
+      cityDirty: false,
+      zip: '',
+      zipValid: false,
+      zipDirty: false,
+      userPicture: null,
+      pictureError: '',
+      terms: false,
+      termsValid: false,
+      termsDirty: false,
+      dsvgo: false,
+      dsvgoValid: false,
+      dsvgoDirty: false,
+      showSuccessMessage: false,
+    };
+  },
+  async created() { // by Create the Component fetch the countries
+    this.countries = await CountryService.getCountries(); // Fetch countries on component creation
+  },
+  methods: {
+    checkPasswordsMatch() {
+      this.passwordsMatch = this.password === this.confirmPassword
+    },
+    async register() {
+      /* Uncomment this code to enable form validation if you want to test it if it's working
+      // i don't want to validate the form
+      this.markAllFieldsDirty();
+      this.runValidations();
+
+      if (!this.allFieldsValid()) {
+        return;
+      }
+
+
+      if (!this.validateUserPicture()) {
+        return;
+      }
+      */
+
+
+      /*Connect to API correctly later*/
+      const formData = {
+        firstName: this.firstName,
+        lastName: this.lastName,
+        salutation: this.salutation,
+        gender: this.gender?.toUpperCase() ?? null,
+        email: this.email,
+        userName: this.username,
+        password: this.password,
+        countryId: this.country,
+      };
+
+      for (let [key, value] of Object.entries(formData)) {
+        console.log(key + ": " + value);
+      }
+
+      if (!this.passwordsMatch) {
+        alert("Passwords do not match")
+        return
+      }
+
+      try {
+
+        const response = await axios.post('http://localhost:8080/auth/register', formData)
+
+        // Registration successful
+        //alert('Registration successful!');
+        // Inside your register method, after successful registration
+        this.showSuccessMessage = true;
+        setTimeout(() => {
+          this.showSuccessMessage = false;
+        }, 3000); // Adjust time as needed
+
+        //this.$router.replace({ name: 'Home' });
+        this.resetForm();
+      } catch (error) {
+        console.error('Fetch error:', error);
+        const errors = error.response.data.errors;
+        if (errors != null) {
+          errors.forEach(err => {
+            this.passwordError += err.defaultMessage + '\n';
+          })
+        }
+        //alert('An error occurred during registration.');
+      }
+    },
+    markAllFieldsDirty() {
+      this.firstNameDirty = true;
+      this.lastNameDirty = true;
+      this.salutationDirty = true;
+      this.genderDirty = true;
+      this.emailDirty = true;
+      this.usernameDirty = true;
+      this.countryDirty = true;
+      this.addressDirty = true;
+      this.cityDirty = true;
+      this.zipDirty = true;
+      this.termsDirty = true;
+      this.dsvgoDirty = true;
+    },
+    runValidations() {
+      this.validateFirstName();
+      this.validateLastName();
+      this.validateSalutation();
+      this.validateGender();
+      this.validateEmail();
+      this.validateUsername();
+      this.validateAddress();
+      this.validateCity();
+      this.validateZip();
+      this.validateTerms();
+      this.validateDsvgo();
+    },
+    validateUserPicture() {
+      if (this.userPicture) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(this.userPicture.type)) {
+          this.pictureError = 'Only JPG, PNG, or GIF files are allowed.';
+          return false;
+        }
+      }
+      return true;
+    },
+    createFormData() {
+      const formData = new FormData();
+      formData.append('firstName', this.firstName);
+      formData.append('lastName', this.lastName);
+      formData.append('salutation', this.salutation);
+      formData.append('gender', this.gender);
+      formData.append('email', this.email);
+      formData.append('username', this.username);
+      formData.append('countryId', this.country);
+      //formData.append('address', this.address);
+      //formData.append('city', this.city);
+      //formData.append('zip', this.zip);
+      //formData.append('userPicture', this.userPicture);
+      //formData.append('terms', this.terms);
+      //formData.append('dsvgo', this.dsvgo);
+      return formData;
+    },
+    validateFirstName() {
+      this.firstNameValid = /^[a-zA-Z]+$/.test(this.firstName.trim());
+    },
+    validateLastName() {
+      this.lastNameValid = /^[a-zA-Z]+$/.test(this.lastName.trim());
+    },
+    // Method to get validation class
+    getValidationClass(fieldName) {
+      return {
+        'is-invalid': !this[`${fieldName}Valid`] && this[`${fieldName}Dirty`],
+        'is-valid': this[`${fieldName}Valid`] && this[`${fieldName}Dirty`]
+      };
+    },
+    // Method to get validation feedback message
+    getValidationMessage(fieldName) {
+      if (!this[`${fieldName}Valid`] && this[`${fieldName}Dirty`]) {
+        return 'Please enter a valid ' + fieldName + '.';
+      }
+      if (this[`${fieldName}Valid`] && this[`${fieldName}Dirty`]) {
+        return 'Looks good!';
+      }
+      return ''; // Default message
+    },
+    validateSalutation() {
+      // This method might be simplified as salutation validation is now part of validateGender
+      // But ensure it's called when the custom salutation input field is changed
+      this.salutationValid = !!this.salutation.trim();
+    },
+    validateGender() {
+      if (!this.gender) {
+        this.genderValid = false;
+        return;
+      }
+      this.genderValid = true;
+      if (this.gender === 'OTHER') {
+        // For 'OTHER', the salutation must be validated separately
+        this.salutationValid = !!this.salutation?.trim();
+      } else {
+        // Automatically set salutation for 'MALE' and 'FEMALE'
+        this.salutation = this.gender === 'MALE' ? 'Mr.' : 'Mrs.';
+        this.salutationValid = true;
+      }
+    },
+    validateEmail() {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      this.emailValid = emailPattern.test(this.email.trim());
+    },
+    validateUsername() {
+      this.usernameValid = this.username.trim().length > 0;
+    },
+    validateAddress() {
+      this.addressValid = this.address.trim().length > 0;
+    },
+    validateCity() {
+      this.cityValid = this.city.trim().length > 0;
+    },
+    validateZip() {
+      this.zipValid = this.zip.trim().length > 0;
+    },
+    validateTerms() {
+      this.termsValid = this.terms;
+    },
+    validateDsvgo() {
+      this.dsvgoValid = this.dsvgo;
+    },
+    allFieldsValid() {
+      return this.firstNameValid &&
+          this.lastNameValid &&
+          this.salutationValid &&
+          this.genderValid &&
+          this.emailValid &&
+          this.usernameValid &&
+          this.termsValid &&
+          this.dsvgoValid;
+    },
+    handleFileUpload(event) {
+      this.userPicture = event.target.files[0];
+      this.pictureError = '';
+    },
+    resetForm() {
+      this.firstName = '';
+      this.lastName = '';
+      this.firstNameValid = false;
+      this.lastNameValid = false;
+      this.firstNameDirty = false;
+      this.lastNameDirty = false;
+      this.salutation = '';
+      this.gender = '';
+      this.salutationValid = false;
+      this.salutationDirty = false;
+      this.genderValid = false;
+      this.genderDirty = false;
+      this.email = '';
+      this.emailValid = false;
+      this.emailDirty = false;
+      this.username = '';
+      this.usernameValid = false;
+      this.usernameDirty = false;
+      this.country = '';
+      this.countryValid = false;
+      this.countryDirty = false;
+      /*
+      this.userPicture = null;
+      this.pictureError = '';
+       */
+      this.terms = false;
+      this.termsValid = false;
+      this.termsDirty = false;
+      this.dsvgo = false;
+      this.dsvgoValid = false;
+      this.dsvgoDirty = false;
+    },
+  },
+
+  watch: {
+    gender(newVal) {
+      if (newVal === 'OTHER') {
+        this.salutation = '';
+        this.salutationValid = false;
+      }
+      this.validateGender();
+    }
+  }
+};
+</script>
+
 <template>
   <div class="container md">
     <h1>Registration</h1>
+    <div v-if="showSuccessMessage" class="alert alert-success" role="alert">
+      Registration successful!
+    </div>
     <form class="register-form" @submit.prevent="register">
       <div class="row g-3 register-row">
         <div class="col-md-5">
@@ -20,34 +329,6 @@
             Please enter a valid last name.
           </div>
           <div v-if="lastNameValid && lastNameDirty" class="valid-feedback">
-            Looks good!
-          </div>
-        </div>
-      </div>
-
-      <div class="row g-3 register-row">
-        <div class="col-md-3">
-          <label for="validationServer04" class="form-label">Salutation</label>
-          <select class="form-select" :class="{'is-invalid': !salutationValid && salutationDirty, 'is-valid': salutationValid && salutationDirty}" id="validationServer04" v-model="salutation" @change="validateSalutation" required>
-            <option selected disabled value="">Choose...</option>
-            <option>Female</option>
-            <option>Male</option>
-            <option>Other</option>
-          </select>
-          <div v-if="!salutationValid && salutationDirty" class="invalid-feedback">
-            Please select a valid salutation.
-          </div>
-          <div v-if="salutationValid && salutationDirty" class="valid-feedback">
-            Looks good!
-          </div>
-        </div>
-        <div v-if="salutation === 'Other'" class="col-md-5">
-          <label for="genderInput" class="form-label">Gender</label>
-          <input type="text" class="form-control" :class="{'is-invalid': !genderValid && genderDirty, 'is-valid': genderValid && genderDirty}" id="genderInput" v-model="gender" @blur="validateGender" required>
-          <div v-if="!genderValid && genderDirty" class="invalid-feedback">
-            Please enter your gender.
-          </div>
-          <div v-if="genderValid && genderDirty" class="valid-feedback">
             Looks good!
           </div>
         </div>
@@ -81,7 +362,28 @@
         </div>
       </div>
 
-      <div class="row g-3 register-row">
+      <div class="register-row input-group mb-3">
+        <input :type="showPassword ? 'text' : 'password'" class="form-control" id="password" v-model="password" @input="passwordError = ''" required>
+        <button class="btn btn-outline-secondary" type="button" @click="showPassword = !showPassword">
+          <span>{{showPassword ? 'Hide' : 'Show'}}</span>
+        </button>
+      </div>
+      <div v-if="passwordError" class="invalid-feedback" style="display: block;">
+        {{ passwordError }}
+      </div>
+
+      <div class="register-row input-group mb-3">
+        <input :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword" v-model="confirmPassword" @blur="checkPasswordsMatch" required>
+        <button class="btn btn-outline-secondary" type="button" @click="showConfirmPassword = !showConfirmPassword">
+          <span v-if="showConfirmPassword">Hide</span>
+          <span v-else>Show</span>
+        </button>
+      </div>
+      <div v-if="!passwordsMatch" class="invalid-feedback" style="display: block;">
+        Passwords do not match.
+      </div>
+
+      <!--div class="row g-3 register-row">
         <div class="col-md-6">
           <label for="userPicture" class="form-label">Upload User Picture</label>
           <input type="file" class="form-control" id="userPicture" accept="image/*" @change="handleFileUpload">
@@ -89,56 +391,39 @@
             {{ pictureError }}
           </div>
         </div>
-      </div>
+      </div-->
 
       <div class="row g-3 register-row">
         <div class="col-md-4">
           <label for="validationServerCountry" class="form-label">Country</label>
-          <select class="form-select" :class="{'is-invalid': !countryValid && countryDirty, 'is-valid': countryValid && countryDirty}" id="validationServerCountry" v-model="country" @change="validateCountry" required>
+          <select class="form-select" :class="{'is-invalid': !countryValid && countryDirty, 'is-valid': countryValid && countryDirty}" id="validationServerCountry" v-model="country" required>
             <option selected disabled value="">Choose...</option>
-            <option>Country 1</option>
-            <option>Country 2</option>
-            <option>Country 3</option>
+            <option v-for="country in countries" :key="country.id" :value="country.id">{{ country.name }}</option>
           </select>
-          <div v-if="!countryValid && countryDirty" class="invalid-feedback">
-            Please select a valid country.
-          </div>
-          <div v-if="countryValid && countryDirty" class="valid-feedback">
-            Looks good!
-          </div>
-        </div>
-        <div class="col-md-6">
-          <label for="validationServerAddress" class="form-label">Address</label>
-          <input type="text" class="form-control" :class="{'is-invalid': !addressValid && addressDirty, 'is-valid': addressValid && addressDirty}" id="validationServerAddress" v-model="address" @blur="validateAddress" required>
-          <div v-if="!addressValid && addressDirty" class="invalid-feedback">
-            Please provide a valid address.
-          </div>
-          <div v-if="addressValid && addressDirty" class="valid-feedback">
-            Looks good!
-          </div>
         </div>
       </div>
 
-      <div class="row g-3 register-row">
-        <div class="col-md-6">
-          <label for="validationServerCity" class="form-label">City</label>
-          <input type="text" class="form-control" :class="{'is-invalid': !cityValid && cityDirty, 'is-valid': cityValid && cityDirty}" id="validationServerCity" v-model="city" @blur="validateCity" required>
-          <div v-if="!cityValid && cityDirty" class="invalid-feedback">
-            Please provide a valid city.
-          </div>
-          <div v-if="cityValid && cityDirty" class="valid-feedback">
-            Looks good!
-          </div>
+      <div class="col-md-3">
+        <label for="validationServer04" class="form-label">Gender</label>
+        <select class="form-select" :class="getValidationClass('gender')" id="validationServer04" v-model="gender" @change="validateGender" required>
+          <option selected disabled value="">Choose...</option>
+          <option v-for="option in genderOptions" :key="option" :value="option">{{ option }}</option>
+        </select>
+        <div v-if="!genderValid && genderDirty" class="invalid-feedback">
+          {{ getValidationMessage('gender') }}
         </div>
-        <div class="col-md-4">
-          <label for="validationServerZip" class="form-label">Zip / PLZ</label>
-          <input type="text" class="form-control" :class="{'is-invalid': !zipValid && zipDirty, 'is-valid': zipValid && zipDirty}" id="validationServerZip" v-model="zip" @blur="validateZip" required>
-          <div v-if="!zipValid && zipDirty" class="invalid-feedback">
-            Please provide a valid zip-code or PLZ.
-          </div>
-          <div v-if="zipValid && zipDirty" class="valid-feedback">
-            Looks good!
-          </div>
+        <div v-if="genderValid && genderDirty" class="valid-feedback">
+          {{ getValidationMessage('gender') }}
+        </div>
+      </div>
+      <div v-if="gender === 'OTHER'" class="col-md-5">
+        <label for="customSalutationInput" class="form-label">Specify Salutation</label>
+        <input type="text" class="form-control" :class="getValidationClass('salutation')" id="customSalutationInput" v-model="salutation" @blur="validateSalutation" required>
+        <div v-if="!salutationValid && salutationDirty" class="invalid-feedback" id="salutationFeedback">
+          {{ getValidationMessage('salutation') }}
+        </div>
+        <div v-if="salutationValid && salutationDirty" class="valid-feedback" id="salutationFeedback">
+          {{ getValidationMessage('salutation') }}
         </div>
       </div>
 
@@ -191,250 +476,6 @@
     </form>
   </div>
 </template>
-
-<script>
-export default {
-  data() {
-    return {
-      firstName: '',
-      lastName: '',
-      firstNameValid: false,
-      lastNameValid: false,
-      firstNameDirty: false,
-      lastNameDirty: false,
-      salutation: '',
-      gender: '',
-      salutationValid: false,
-      salutationDirty: false,
-      genderValid: false,
-      genderDirty: false,
-      email: '',
-      emailValid: false,
-      emailDirty: false,
-      username: '',
-      usernameValid: false,
-      usernameDirty: false,
-      country: '',
-      countryValid: false,
-      countryDirty: false,
-      address: '',
-      addressValid: false,
-      addressDirty: false,
-      city: '',
-      cityValid: false,
-      cityDirty: false,
-      zip: '',
-      zipValid: false,
-      zipDirty: false,
-      userPicture: null,
-      pictureError: '',
-      terms: false,
-      termsValid: false,
-      termsDirty: false,
-      dsvgo: false,
-      dsvgoValid: false,
-      dsvgoDirty: false
-    };
-  },
-  methods: {
-    async register() {
-      this.markAllFieldsDirty();
-
-      this.runValidations();
-
-      if (!this.allFieldsValid()) {
-        return;
-      }
-
-      if (!this.validateUserPicture()) {
-        return;
-      }
-
-      /*Connect to API correctly later*/
-
-      /*try {
-        const formData = this.createFormData();
-        const response = await fetch('/api/register', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Error:', errorData);
-          alert('Registration failed: ' + errorData.message);
-          return;
-        }
-
-        // Registration successful
-        alert('Registration successful!');
-        this.$router.push('/home');  // Redirect to home page
-        this.resetForm();
-      } catch (error) {
-        console.error('Fetch error:', error);
-        alert('An error occurred during registration.');
-      }*/
-    },
-    markAllFieldsDirty() {
-      this.firstNameDirty = true;
-      this.lastNameDirty = true;
-      this.salutationDirty = true;
-      this.genderDirty = true;
-      this.emailDirty = true;
-      this.usernameDirty = true;
-      this.countryDirty = true;
-      this.addressDirty = true;
-      this.cityDirty = true;
-      this.zipDirty = true;
-      this.termsDirty = true;
-      this.dsvgoDirty = true;
-    },
-    runValidations() {
-      this.validateFirstName();
-      this.validateLastName();
-      this.validateSalutation();
-      this.validateGender();
-      this.validateEmail();
-      this.validateUsername();
-      this.validateCountry();
-      this.validateAddress();
-      this.validateCity();
-      this.validateZip();
-      this.validateTerms();
-      this.validateDsvgo();
-    },
-    validateUserPicture() {
-      if (this.userPicture) {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-        if (!allowedTypes.includes(this.userPicture.type)) {
-          this.pictureError = 'Only JPG, PNG, or GIF files are allowed.';
-          return false;
-        }
-      }
-      return true;
-    },
-    createFormData() {
-      const formData = new FormData();
-      formData.append('firstName', this.firstName);
-      formData.append('lastName', this.lastName);
-      formData.append('salutation', this.salutation);
-      formData.append('gender', this.gender);
-      formData.append('email', this.email);
-      formData.append('username', this.username);
-      formData.append('country', this.country);
-      formData.append('address', this.address);
-      formData.append('city', this.city);
-      formData.append('zip', this.zip);
-      formData.append('userPicture', this.userPicture);
-      formData.append('terms', this.terms);
-      formData.append('dsvgo', this.dsvgo);
-      return formData;
-    },
-    validateFirstName() {
-      this.firstNameValid = /^[a-zA-Z]+$/.test(this.firstName.trim());
-    },
-    validateLastName() {
-      this.lastNameValid = /^[a-zA-Z]+$/.test(this.lastName.trim());
-    },
-    validateSalutation() {
-      this.salutationValid = !!this.salutation;
-      if (this.salutation === 'Other') {
-        this.genderDirty = true;
-        this.validateGender();
-      } else {
-        this.genderDirty = false;
-        this.genderValid = true;
-      }
-    },
-    validateGender() {
-      this.genderValid = this.salutation !== 'Other' || !!this.gender;
-    },
-    validateEmail() {
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      this.emailValid = emailPattern.test(this.email.trim());
-    },
-    validateUsername() {
-      this.usernameValid = this.username.trim().length > 0;
-    },
-    validateCountry() {
-      this.countryValid = !!this.country;
-    },
-    validateAddress() {
-      this.addressValid = this.address.trim().length > 0;
-    },
-    validateCity() {
-      this.cityValid = this.city.trim().length > 0;
-    },
-    validateZip() {
-      this.zipValid = this.zip.trim().length > 0;
-    },
-    validateTerms() {
-      this.termsValid = this.terms;
-    },
-    validateDsvgo() {
-      this.dsvgoValid = this.dsvgo;
-    },
-    allFieldsValid() {
-      return this.firstNameValid &&
-          this.lastNameValid &&
-          this.salutationValid &&
-          this.genderValid &&
-          this.emailValid &&
-          this.usernameValid &&
-          this.countryValid &&
-          this.addressValid &&
-          this.cityValid &&
-          this.zipValid &&
-          this.termsValid &&
-          this.dsvgoValid;
-    },
-    handleFileUpload(event) {
-      this.userPicture = event.target.files[0];
-      this.pictureError = '';
-    },
-    resetForm() {
-      this.firstName = '';
-      this.lastName = '';
-      this.firstNameValid = false;
-      this.lastNameValid = false;
-      this.firstNameDirty = false;
-      this.lastNameDirty = false;
-      this.salutation = '';
-      this.gender = '';
-      this.salutationValid = false;
-      this.salutationDirty = false;
-      this.genderValid = false;
-      this.genderDirty = false;
-      this.email = '';
-      this.emailValid = false;
-      this.emailDirty = false;
-      this.username = '';
-      this.usernameValid = false;
-      this.usernameDirty = false;
-      this.country = '';
-      this.countryValid = false;
-      this.countryDirty = false;
-      this.address = '';
-      this.addressValid = false;
-      this.addressDirty = false;
-      this.city = '';
-      this.cityValid = false;
-      this.cityDirty = false;
-      this.zip = '';
-      this.zipValid = false;
-      this.zipDirty = false;
-      this.userPicture = null;
-      this.pictureError = '';
-      this.terms = false;
-      this.termsValid = false;
-      this.termsDirty = false;
-      this.dsvgo = false;
-      this.dsvgoValid = false;
-      this.dsvgoDirty = false;
-    }
-  }
-};
-</script>
 
 <style scoped>
 .container {
