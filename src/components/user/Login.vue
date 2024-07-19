@@ -20,7 +20,9 @@ export default {
       };
 
       try {
-        const response = await axios.post('http://localhost:8080/auth/login', loginData);
+        const response = await axios.post('http://localhost:8080/auth/login', loginData, {
+          withCredentials: true
+        });
         console.log('Login successful:', response.data);
         // Handle successful login here (e.g., redirecting the user or storing the login token)
       } catch (error) {
