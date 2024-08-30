@@ -33,7 +33,9 @@
               <li>
                 <router-link :to="{ name: 'EventOverview'}" class="dropdown-item">Overview</router-link>
               </li>
-              <li><a class="dropdown-item" href="events/filter.html">Filter Events</a></li>
+              <li>
+                <router-link :to="{ name: 'EventFilter'}" class="dropdown-item">Filter Events</router-link>
+              </li>
               <li>
                 <hr class="dropdown-divider">
               </li>
@@ -43,7 +45,7 @@
             </ul>
           </li>
           <li class="nav-item">
-            <a class="nav-link disabled" aria-disabled="true">Admin</a>
+            <router-link :to="{name:'AdminDashboard'}" class="nav-link">Admin</router-link>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -54,6 +56,13 @@
               <li><router-link :to="{ name: 'Register' }" class="dropdown-item">Register</router-link></li>
             </ul>
           </li>
+
+          <li class="nav-item">
+            <router-link :to="{ name: 'UserDashboard' }" class="nav-link">
+              <img class="rounded-circle" src="../assets/images/arial.jpg" alt="Profile Picture" width="40" height="40">
+              <span>User Profile</span>
+            </router-link>
+          </li>
         </ul>
       </div>
     </div>
@@ -61,5 +70,10 @@
 </template>
 
 <style scoped>
-
+.nav-link {
+  align-content: end;
+  img.rounded-circle {
+    border-radius: 50%;
+  }
+}
 </style>
