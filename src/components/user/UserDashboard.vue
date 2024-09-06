@@ -9,6 +9,10 @@ import axios from "axios";
 export default {
   data() {
     return {
+      // Profile and Authentication Data
+      user: null,
+      token: null,
+
       genderOptions: ['FEMALE', 'MALE', 'OTHER'],
       firstName: '',
       lastName: '',
@@ -61,10 +65,52 @@ export default {
       flashMessageText: ''
     };
   },
-  async created() { // by Create the Component fetch the countries
+  async created() {
+    // Check for JWT token and fetch user data for profile
+    this.token = localStorage.getItem('jwtToken');
+    if (this.token) {
+      try {
+        const response = await axios.get('http://localhost:8080/users/me', {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        });
+        this.user = response.data;
+        this.firstName = this.user.firstName;
+        this.lastName = this.user.lastName;
+        this.email = this.user.email;
+        this.username = this.user.username;
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        localStorage.removeItem('jwtToken'); // Clear token if invalid
+      }
+    }
+
     this.countries = await CountryService.getCountries(); // Fetch countries on component creation
   },
   methods: {
+    async updateProfile() {
+      try {
+        const response = await axios.put(
+            'http://localhost:8080/users/me',
+            {
+              firstName: this.firstName,
+              lastName: this.lastName,
+              email: this.email,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${this.token}`,
+              },
+            }
+        );
+        alert('Profile updated successfully!');
+      } catch (error) {
+        console.error('Failed to update profile:', error);
+        alert('Error updating profile.');
+      }
+    },
+
     checkPasswordsMatch() {
       this.passwordsMatch = this.password === this.confirmPassword
     },
@@ -339,6 +385,36 @@ export default {
     <div v-if="showSuccessMessage" class="alert alert-success" role="alert">
       Registration successful!
     </div>
+
+    <!-- User Profile Section -->
+    <div v-if="user">
+      <h2>User Profile</h2>
+      <form @submit.prevent="updateProfile">
+        <div class="row row-cols-1 g-4">
+          <div class="col">
+            <label for="firstName">First Name:</label>
+            <input v-model="firstName" type="text" id="firstName" class="form-control" />
+          </div>
+          <div class="col">
+            <label for="lastName">Last Name:</label>
+            <input v-model="lastName" type="text" id="lastName" class="form-control" />
+          </div>
+          <div class="col">
+            <label for="email">Email:</label>
+            <input v-model="email" type="email" id="email" class="form-control" />
+          </div>
+          <div class="col">
+            <label for="username">Username:</label>
+            <input v-model="username" type="text" id="username" class="form-control" disabled />
+          </div>
+          <button type="submit" class="btn btn-primary mt-3">Update Profile</button>
+        </div>
+      </form>
+    </div>
+    <div v-else>
+      <p>Please log in to view your profile.</p>
+    </div>
+
     <form class="register-form" @submit.prevent="register">
       <div class="row row-cols-1 g-4">
         <div class="col">

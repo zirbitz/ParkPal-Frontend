@@ -1,5 +1,4 @@
 <script setup>
-
 </script>
 
 <template>
@@ -19,7 +18,7 @@
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <router-link :to="{name: 'Home'}" class="nav-link active" aria-current="page">Home</router-link>
+            <router-link :to="{name: 'Home'}" class="nav-link">Home</router-link>
           </li>
           <li class="nav-item">
             <router-link :to="{name:'ParksOverview'}" class="nav-link">Parks</router-link>
@@ -44,7 +43,7 @@
               </li>
             </ul>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="isAdmin">
             <router-link :to="{name:'AdminDashboard'}" class="nav-link">Admin</router-link>
           </li>
           <li class="nav-item dropdown">
@@ -52,12 +51,13 @@
               Login
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li><router-link :to="{ name: 'Login' }" class="dropdown-item">Login</router-link></li>
-              <li><router-link :to="{ name: 'Register' }" class="dropdown-item">Register</router-link></li>
+              <li v-if="!isAuthenticated"><router-link :to="{ name: 'Login' }" class="dropdown-item">Login</router-link></li>
+              <li v-if="!isAuthenticated"><router-link :to="{ name: 'Register' }" class="dropdown-item">Register</router-link></li>
+              <li v-if="isAuthenticated"><router-link :to="{ name: 'Logout' }" class="dropdown-item">Logout</router-link></li>
             </ul>
           </li>
 
-          <li class="nav-item">
+          <li class="nav-item" v-if="isAuthenticated">
             <router-link :to="{ name: 'UserDashboard' }" class="nav-link">
               <img class="rounded-circle" src="../assets/images/arial.jpg" alt="Profile Picture" width="40" height="40">
               <span>User Profile</span>
@@ -68,6 +68,29 @@
     </div>
   </nav>
 </template>
+
+
+<script>
+import { isAuthenticated, isAdmin } from '@/service/authService';
+
+
+export default {
+  name: 'Navbar',
+  computed: {
+    isAuthenticated() {
+      return isAuthenticated();
+    },
+    isAdmin() {
+      return isAdmin();
+    }
+  },
+  methods: {
+    logout() {
+      this.$router.push('/login');
+    }
+  }
+};
+</script>
 
 <style scoped>
 .nav-link {

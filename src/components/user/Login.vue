@@ -1,7 +1,9 @@
 <script>
 import axios from 'axios';
+import EventOverView from "@/components/event/EventOverView.vue";
 
 export default {
+  components: { EventOverView },
   data() {
     return {
       email: '',
@@ -13,6 +15,11 @@ export default {
     togglePasswordVisibility() {
       this.showPassword = !this.showPassword;
     },
+    // Helper function to set cookies
+    setCookie(name, value, days) {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+    },
     async submitForm() {
       const loginData = {
         username: this.email,
@@ -23,16 +30,18 @@ export default {
         const response = await axios.post('http://localhost:8080/auth/login', loginData, {
           withCredentials: true
         });
+        window.location.href = '/eventOverview'
+
         console.log('Login successful:', response.data);
-        // Handle successful login here (e.g., redirecting the user or storing the login token)
       } catch (error) {
-        console.error('Login failed:', error.response.data);
-        // Handle login failure here (e.g., showing an error message)
+        console.error('Login failed:', error.response?.data || error.message);
+        // Optionally show an error message to the user
       }
     }
   }
 };
 </script>
+
 
 <template>
   <div class="container">
