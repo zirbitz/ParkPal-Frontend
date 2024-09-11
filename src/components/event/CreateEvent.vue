@@ -1,81 +1,187 @@
 <script setup>
-import { ref, watch, onUnmounted } from 'vue';
+import {onMounted, ref} from 'vue';
+import axios from 'axios';
+import {getCookie} from "@/service/authService.js";
+import {jwtDecode} from "jwt-decode";
 
-// State to store selected media files and tags
+
 const mediaFiles = ref([]);
 const selectedTags = ref(new Set());
+const createMediaFileIds = ref([]); // To store the IDs of uploaded media files
+const parks = ref([]); // Store the list of parks
+const selectedParkId = ref('');
+const showSuccessPopup = ref(false);
+
+// Fetch parks from the API on component mount
+onMounted(async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/parks');
+    parks.value = response.data;
+  } catch (error) {
+    console.error('Error fetching parks:', error);
+  }
+});
+
+
+// Handle file selection
+const handleFileSelection = (event) => {
+  try {
+    const files = Array.from(event.target.files);
+    files.forEach(file => {
+      if (file && !file.previewUrl) {
+        createObjectURL(file);
+      }
+    });
+    mediaFiles.value = [...mediaFiles.value, ...files];
+  } catch (error) {
+    console.error('Error handling file selection:', error);
+  }
+};
+
+// Remove a media file from the list
+const removeMediaFile = (index) => {
+  try {
+    const file = mediaFiles.value[index];
+    if (file.previewUrl) {
+      URL.revokeObjectURL(file.previewUrl);
+    }
+    mediaFiles.value.splice(index, 1);
+  } catch (error) {
+    console.error(`Error removing media file at index ${index}:`, error);
+  }
+};
+
+// Remove all media files
+const removeAllMediaFiles = () => {
+  try {
+    mediaFiles.value.forEach(file => {
+      if (file.previewUrl) {
+        URL.revokeObjectURL(file.previewUrl);
+      }
+    });
+    mediaFiles.value = [];
+  } catch (error) {
+    console.error('Error removing all media files:', error);
+  }
+};
+
+// Create a preview URL for the files
+const createObjectURL = (file) => {
+  try {
+    const url = URL.createObjectURL(file);
+    file.previewUrl = url;
+    return url;
+  } catch (error) {
+    console.error('Error creating object URL for file:', error);
+  }
+};
+
+// Upload media files one by one to the FileController
+const uploadMediaFiles = async () => {
+  try {
+    const promises = mediaFiles.value.map(async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await axios.post('http://localhost:8080/files', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data; // Assuming the response contains the ID of the uploaded file
+      } catch (uploadError) {
+        console.error('Error uploading file:', file.name, uploadError);
+        throw uploadError; // Ensure error propagates to break file upload
+      }
+    });
+
+    // Await all file uploads and set the IDs to createMediaFileIds
+    const fileIds = await Promise.all(promises);
+    createMediaFileIds.value = fileIds;
+  } catch (error) {
+    console.error('Error uploading media files:', error);
+    throw error; // Re-throw to handle higher up
+  }
+};
 
 // Toggle selection for tags
 const toggleTagSelection = (event) => {
-  const tag = event.target.dataset.value;
-  if (selectedTags.value.has(tag)) {
-    selectedTags.value.delete(tag);
-  } else {
-    selectedTags.value.add(tag);
+  try {
+    const tag = event.target.dataset.value;
+    if (selectedTags.value.has(tag)) {
+      selectedTags.value.delete(tag);
+    } else {
+      selectedTags.value.add(tag);
+    }
+  } catch (error) {
+    console.error('Error toggling tag selection:', error);
   }
 };
 
 // Check if a tag is selected
 const isTagSelected = (tag) => selectedTags.value.has(tag);
 
-// Handle file selection
-const handleFileSelection = (event) => {
-  const files = Array.from(event.target.files);
-  files.forEach(file => {
-    if (file && !file.previewUrl) {
-      createObjectURL(file);
-    }
-  });
-  mediaFiles.value = [...mediaFiles.value, ...files];
-};
+const submitForm = async (event) => {
+  event.preventDefault();
 
-// Remove a media file from the list
-const removeMediaFile = (index) => {
-  const file = mediaFiles.value[index];
-  if (file.previewUrl) {
-    URL.revokeObjectURL(file.previewUrl);
+
+  try {
+    // First upload media files
+    await uploadMediaFiles();
+
+    // Function to retrieve userId from token
+    function getUserIdFromToken() {
+      const token = getCookie('token'); // Retrieve JWT from cookies
+      if (!token) return null; // Return null if no token is found
+
+      try {
+        const decodedToken = jwtDecode(token);
+        console.log(decodedToken.userId); // Log the userId before returning it
+        return decodedToken.userId ? decodedToken.userId : null;
+      } catch (error) {
+        console.error('Error decoding token:', error); // Log error for debugging
+        return null; // Return null if there’s an error decoding the token
+      }
+    }
+
+    // Use logical OR (||) instead of bitwise OR (|)
+    const userId = getUserIdFromToken() || null;
+
+
+    // Prepare the data to match CreateEventDto
+    const formData = {
+      title: document.getElementById('title').value,
+      description: document.getElementById('description').value,
+      startTS: document.getElementById('startTime').value,  // should be a datetime-local field
+      endTS: document.getElementById('lastTime').value,     // should be a datetime-local field
+      parkId: selectedParkId.value,
+      creatorUserId: userId, // Ensure this has the correct userId
+      createMediaFileIds: createMediaFileIds.value // IDs of uploaded media files
+    };
+
+    // Send the event creation request
+    const response = await axios.post('http://localhost:8080/events', formData);
+
+    console.log('Event created successfully:', response.data);
+    // Show the success popup and hide it after 3 seconds
+    showSuccessPopup.value = true;
+    setTimeout(() => {
+      showSuccessPopup.value = false;
+    }, 3000); // Hide popup after 3 seconds
+
+  } catch (error) {
+    console.error('Error creating event:', error.response?.data || error.message);
   }
-  mediaFiles.value.splice(index, 1);
 };
-
-// Remove all media files
-const removeAllMediaFiles = () => {
-  mediaFiles.value.forEach(file => {
-    if (file.previewUrl) {
-      URL.revokeObjectURL(file.previewUrl);
-    }
-  });
-  mediaFiles.value = [];
-};
-
-// Create a preview URL for the files
-const createObjectURL = (file) => {
-  const url = URL.createObjectURL(file);
-  file.previewUrl = url;
-  return url;
-};
-
-// Cleanup object URLs when the component is unmounted
-onUnmounted(() => {
-  mediaFiles.value.forEach(file => URL.revokeObjectURL(file.previewUrl));
-});
-
-// Watch for changes in mediaFiles to update previews
-watch(mediaFiles, (newFiles) => {
-  newFiles.forEach(file => {
-    if (file && !file.previewUrl) {
-      createObjectURL(file);
-    }
-  });
-});
 </script>
+
+
 
 <template>
   <div class="container mt-4">
     <h1 class="text-center">Create Event</h1>
     <hr>
-    <form id="editEventForm">
-      <div class="mb-3">
+    <form id="editEventForm" @submit.prevent="submitForm">
+    <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
         <input type="text" class="form-control" id="title" required>
       </div>
@@ -93,23 +199,9 @@ watch(mediaFiles, (newFiles) => {
       </div>
       <div class="mb-3">
         <label for="park" class="form-label">Select Park</label>
-        <select class="form-select" id="park" required>
-          <option value="park1">Park 1</option>
-          <option value="park2">Park 2</option>
-          <option value="park3">Park 3</option>
+        <select class="form-select" id="park" v-model="selectedParkId" required>
+          <option v-for="park in parks" :key="park.id" :value="park.id">{{ park.name }}</option>
         </select>
-      </div>
-      <div class="mb-3">
-        <label for="joinedUsers" class="form-label">List of Joined Users</label>
-        <table class="table table-borderless table-sm">
-          <tbody>
-          <tr>
-            <td>User 1</td>
-            <td>User 2</td>
-            <!-- Add more user items dynamically if needed -->
-          </tr>
-          </tbody>
-        </table>
       </div>
       <div class="mb-3">
         <label for="eventMedia" class="form-label">List of Event Media (Attachments)</label>
@@ -162,6 +254,12 @@ watch(mediaFiles, (newFiles) => {
       </div>
       <button type="submit" class="btn btn-primary">Update Event</button>
     </form>
+
+    <div v-if="showSuccessPopup" class="popup">
+      <div class="popup-content">
+        <p>Event created successfully!</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -210,5 +308,24 @@ watch(mediaFiles, (newFiles) => {
   max-width: 100%;
   max-height: 100px;
   object-fit: cover;
+}
+
+.popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #28a745;
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  font-size: 16px;
+}
+
+.popup-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
