@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { isAuthenticated, isAdmin } from '@/service/authService';
+import { isAuthenticated, isAdmin } from '@/service/authService.js';
 
 // Import your components
 import CreateEvent from '@/components/event/CreateEvent.vue';
@@ -51,8 +51,8 @@ const routes = [
     {
         path: '/logout',
         name: 'Logout',
-        component: Logout,
         meta: { requiresAuth: true },
+        component: Logout,
     },
     {
         path: '/faq',
@@ -90,18 +90,20 @@ const router = createRouter({
 });
 
 // Global navigation guard
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     // Check if the route requires authentication
     if (to.matched.some((record) => record.meta.requiresAuth)) {
-        if (!isAuthenticated()) {
-            next('/login'); // Redirect to login if not authenticated
+        const authenticated = await isAuthenticated(); // Wait for the authentication check
+        if (!authenticated) {
+           next('/login'); // Redirect to login if not authenticated
         } else {
-            // If the route requires admin privileges
+            // Check if the route requires admin privileges
             if (to.matched.some((record) => record.meta.requiresAdmin)) {
-                if (isAdmin()) {
-                    next('/adminDashboard');
+                const admin = await isAdmin(); // Wait for the admin check
+                if (admin) {
+                    next(); // Proceed to the admin route
                 } else {
-                    next('/'); // Redirect non-admins to home or show an error
+                    next('/'); // Redirect non-admins to home
                 }
             } else {
                 next(); // If no admin check is needed, proceed normally

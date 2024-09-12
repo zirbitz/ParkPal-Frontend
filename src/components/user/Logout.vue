@@ -12,35 +12,43 @@
 </template>
 
 <script>
-// Import the `isAuthenticated` and `isAdmin` functions
-import {isAuthenticated, isAdmin} from '@/service/authService.js'; // Replace with actual path to your `auth.js` file
-
-// Helper function to delete a cookie
-function deleteCookie(name) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-}
+import axios from 'axios';
+import { isAdmin, isAuthenticated } from "@/service/authService.js";
 
 export default {
   computed: {
     isAuthenticated() {
-      return isAuthenticated();  // Returns whether the user is authenticated
+      return isAuthenticated();
     },
     isAdmin() {
-      return isAdmin();  // Returns whether the user has admin privileges
+      return isAdmin();
     }
   },
   methods: {
-    logout() {
-      // Check if the user is authenticated before logging out
+    async logout() {
       if (this.isAuthenticated) {
-        console.log("Logging out, deleting JWT token.");
+        try {
+          console.log("Logging out, sending request to backend.");
 
-        // Delete the JWT token cookie
-        deleteCookie('token');
-        // After logout, redirect to the login page
-        //TODO: replace this maybe later with vuex
-        window.location.href = '/'
+          // Send request to backend to handle server-side logout
+          await axios.post(
+              'http://localhost:8080/auth/logout',
+              {},
+              { withCredentials: true } // Ensures that cookies (e.g., JWT token) are sent automatically
+          );
 
+          // Clear the client-side storage (localStorage/sessionStorage) if needed
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+
+          // Optionally clear the cookie manually (not necessary if the backend handles it)
+          document.cookie = "token=; Max-Age=0; path=/";
+
+          // Redirect to the login page after logout
+          window.location.href = '/login'; // Change to your actual login page
+        } catch (error) {
+          console.error('Error during logout:', error);
+        }
       } else {
         console.log("User is already logged out or not authenticated.");
       }

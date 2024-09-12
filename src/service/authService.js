@@ -1,42 +1,33 @@
-import { jwtDecode } from 'jwt-decode';
-// Helper function to get a specific cookie by name
+import axios from 'axios';
 
-export function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-}
-
-export function isAuthenticated() {
-    const token = getCookie('token'); // Retrieve JWT from cookies
-    if (!token) return false;
-
+export async function fetchUserData() {
     try {
-        const decodedToken = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
-
-        // Check if the token is expired
-        if (decodedToken.exp < currentTime) {
-            return false;
-        }
-        return true;
+        // Make a request to the backend to get user data
+        // The browser will automatically include the HttpOnly cookie in the request
+        const response = await axios.get('http://localhost:8080/auth/me', {
+            withCredentials: true, // Ensure cookies are included in the request
+        });
+        console.log(response.data)
+        return response.data;
     } catch (error) {
-        return false;
+        console.error('Error fetching user data:', error);
+        return null; // Return null if there's any error (e.g., unauthorized)
     }
 }
 
-export function isAdmin() {
-    const token = getCookie('token'); // Retrieve JWT from cookies
-    if (!token) return false;
+export async function isAuthenticated() {
+    const userData = await fetchUserData();
 
-    try {
-        const decodedToken = jwtDecode(token);
+    // If user data is fetched, the user is authenticated
+    return userData !== null;
+}
 
-        // Check if 'role' is an array and includes 'ADMIN'
-        return decodedToken.role && Array.isArray(decodedToken.role) &&
-            decodedToken.role.some(authority => authority === 'ADMIN');
-    } catch (error) {
-        return false;
+export async function isAdmin() {
+    const userData = await fetchUserData();
+
+    // Check if the user has the 'ADMIN' role as a string
+    if (userData && userData.role) {
+        return userData.role === 'ADMIN';
     }
+    return false;
 }
