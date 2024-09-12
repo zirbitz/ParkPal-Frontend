@@ -14,6 +14,7 @@ import EventFilter from '@/components/event/EventFilter.vue';
 import UserDashboard from '@/components/user/UserDashboard.vue';
 import Impressum from '@/components/Impressum.vue';
 import AdminDashboard from '@/components/admin/AdminDashboard.vue';
+import PictureViewer from "@/components/PictureViewer.vue";
 
 // Routes configuration
 const routes = [
@@ -80,6 +81,12 @@ const routes = [
         path: '/impressum',
         name: 'Impressum',
         component: Impressum,
+    },
+    {
+        path: '/picture/:externalId',
+        name: 'PictureViewer',
+        component: PictureViewer,
+        props: true,
     },
 ];
 
