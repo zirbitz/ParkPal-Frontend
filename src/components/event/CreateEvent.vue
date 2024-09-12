@@ -1,8 +1,8 @@
 <script setup>
 import {onMounted, ref} from 'vue';
 import axios from 'axios';
-import {getCookie} from "@/service/authService.js";
-import {jwtDecode} from "jwt-decode";
+import {fetchUserData} from "@/service/authService.js";
+
 
 
 const mediaFiles = ref([]);
@@ -120,48 +120,49 @@ const toggleTagSelection = (event) => {
 // Check if a tag is selected
 const isTagSelected = (tag) => selectedTags.value.has(tag);
 
+
 const submitForm = async (event) => {
   event.preventDefault();
 
-
   try {
-    // First upload media files
+    // First, upload media files
     await uploadMediaFiles();
 
-    // Function to retrieve userId from token
-    function getUserIdFromToken() {
-      const token = getCookie('token'); // Retrieve JWT from cookies
-      if (!token) return null; // Return null if no token is found
-
-      try {
-        const decodedToken = jwtDecode(token);
-        console.log(decodedToken.userId); // Log the userId before returning it
-        return decodedToken.userId ? decodedToken.userId : null;
-      } catch (error) {
-        console.error('Error decoding token:', error); // Log error for debugging
-        return null; // Return null if there’s an error decoding the token
+    // Function to retrieve userId from the backend
+    async function getUserIdFromBackend() {
+      // Use fetchUserData to get the user data, including userId
+      const userData = await fetchUserData();
+      if (userData && userData.id) {
+        console.log(userData.id); // Log the userId for debugging
+        return userData.id; // Return userId if it exists
       }
+      return null; // Return null if no userId is found
     }
 
-    // Use logical OR (||) instead of bitwise OR (|)
-    const userId = getUserIdFromToken() || null;
+    // Get the userId from the backend
+    const userId = await getUserIdFromBackend();
 
+    if (!userId) {
+      console.error('User is not authenticated or userId is not available.');
+      return; // Exit early if no userId is found
+    }
 
     // Prepare the data to match CreateEventDto
     const formData = {
       title: document.getElementById('title').value,
       description: document.getElementById('description').value,
-      startTS: document.getElementById('startTime').value,  // should be a datetime-local field
-      endTS: document.getElementById('lastTime').value,     // should be a datetime-local field
+      startTS: document.getElementById('startTime').value, // should be a datetime-local field
+      endTS: document.getElementById('lastTime').value, // should be a datetime-local field
       parkId: selectedParkId.value,
-      creatorUserId: userId, // Ensure this has the correct userId
-      createMediaFileIds: createMediaFileIds.value // IDs of uploaded media files
+      creatorUserId: userId, // Ensure this has the correct userId from the backend
+      createMediaFileIds: createMediaFileIds.value, // IDs of uploaded media files
     };
 
     // Send the event creation request
     const response = await axios.post('http://localhost:8080/events', formData);
 
     console.log('Event created successfully:', response.data);
+
     // Show the success popup and hide it after 3 seconds
     showSuccessPopup.value = true;
     setTimeout(() => {
@@ -172,6 +173,7 @@ const submitForm = async (event) => {
     console.error('Error creating event:', error.response?.data || error.message);
   }
 };
+
 </script>
 
 

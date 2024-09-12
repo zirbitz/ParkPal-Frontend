@@ -1,14 +1,9 @@
-<script setup>
-</script>
-
 <template>
-  <nav class="navbar navbar-expand-lg">
+  <nav class="navbar navbar-expand-lg" v-if="authStatus">
     <div class="container">
       <router-link :to="{ name:'Home' }" class="navbar-brand">
-        <router-link class="navbar-brand" :to="{ name:'Home' }">
-          <img id="LogoParkpal" src="../assets/icons/Parkpal_Logo.svg" alt="Park Pal Logo">
-          Park Pal
-        </router-link>
+        <img id="LogoParkpal" src="../assets/icons/Parkpal_Logo.svg" alt="Park Pal Logo">
+        Park Pal
       </router-link>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
               data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
@@ -43,7 +38,7 @@
               </li>
             </ul>
           </li>
-          <li class="nav-item" v-if="isAdmin">
+          <li class="nav-item" v-if="authStatus.isAdmin">
             <router-link :to="{name:'AdminDashboard'}" class="nav-link">Admin</router-link>
           </li>
           <li class="nav-item dropdown">
@@ -51,13 +46,13 @@
               Login
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li v-if="!isAuthenticated"><router-link :to="{ name: 'Login' }" class="dropdown-item">Login</router-link></li>
-              <li v-if="!isAuthenticated"><router-link :to="{ name: 'Register' }" class="dropdown-item">Register</router-link></li>
-              <li v-if="isAuthenticated"><router-link :to="{ name: 'Logout' }" class="dropdown-item">Logout</router-link></li>
+              <li v-if="!authStatus.isAuthenticated"><router-link :to="{ name: 'Login' }" class="dropdown-item">Login</router-link></li>
+              <li v-if="!authStatus.isAuthenticated"><router-link :to="{ name: 'Register' }" class="dropdown-item">Register</router-link></li>
+              <li v-if="authStatus.isAuthenticated"><router-link :to="{ name: 'Logout' }" class="dropdown-item">Logout</router-link></li>
             </ul>
           </li>
 
-          <li class="nav-item" v-if="isAuthenticated">
+          <li class="nav-item" v-if="authStatus.isAuthenticated">
             <router-link :to="{ name: 'UserDashboard' }" class="nav-link">
               <img class="rounded-circle" src="../assets/images/arial.jpg" alt="Profile Picture" width="40" height="40">
               <span>User Profile</span>
@@ -69,27 +64,26 @@
   </nav>
 </template>
 
-
-<script>
+<script setup>
+import { ref, onMounted } from 'vue';
 import { isAuthenticated, isAdmin } from '@/service/authService';
 
+// Reactive state to store authentication status
+const authStatus = ref({
+  isAuthenticated: false,
+  isAdmin: false
+});
 
-export default {
-  name: 'Navbar',
-  computed: {
-    isAuthenticated() {
-      return isAuthenticated();
-    },
-    isAdmin() {
-      return isAdmin();
-    }
-  },
-  methods: {
-    logout() {
-      this.$router.push('/login');
-    }
+async function fetchAuthStatus() {
+  authStatus.value.isAuthenticated = await isAuthenticated();
+  if (authStatus.value.isAuthenticated) {
+    authStatus.value.isAdmin = await isAdmin();
   }
-};
+}
+
+onMounted(() => {
+  fetchAuthStatus();
+});
 </script>
 
 <style scoped>

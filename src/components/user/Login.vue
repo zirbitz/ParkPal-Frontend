@@ -1,6 +1,7 @@
 <script>
 import axios from 'axios';
 import EventOverView from "@/components/event/EventOverView.vue";
+import {isAdmin, isAuthenticated} from "@/service/authService.js";
 
 export default {
   components: { EventOverView },
@@ -30,6 +31,9 @@ export default {
         const response = await axios.post('http://localhost:8080/auth/login', loginData, {
           withCredentials: true
         });
+
+        await isAdmin();
+        await isAuthenticated();
         window.location.href = '/eventOverview'
 
         console.log('Login successful:', response.data);
