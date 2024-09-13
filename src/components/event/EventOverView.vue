@@ -31,7 +31,6 @@ onMounted(() => {
     <hr>
     <div class="row text-center">
       <div class="col-sm-6 mb-3 mb-sm-0">
-          <!-- Pass the fetched events to EventCard as a prop -->
           <EventCard :events="events" />
       </div>
     </div>
