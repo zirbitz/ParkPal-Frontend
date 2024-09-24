@@ -15,6 +15,8 @@ import UserDashboard from '@/components/user/UserDashboard.vue';
 import Impressum from '@/components/Impressum.vue';
 import AdminDashboard from '@/components/admin/AdminDashboard.vue';
 import PictureViewer from "@/components/PictureViewer.vue";
+import UpdateEvent from '@/components/event/UpdateEvent.vue';
+
 
 // Routes configuration
 const routes = [
@@ -88,6 +90,13 @@ const routes = [
         component: PictureViewer,
         props: true,
     },
+    {
+        path: '/updateEvent/:eventId',
+        name: 'UpdateEvent',
+        component: UpdateEvent,
+        props: true,
+        meta: { requiresAuth: true },
+    }
 ];
 
 // Create the router instance
