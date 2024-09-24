@@ -90,7 +90,7 @@ export default {
               </div>
               <div class="mt-3 text-center">
                 <button type="submit" class="btn btn-primary">
-                  Submit
+                  Log in
                   <span class="icon"></span>
                 </button>
               </div>

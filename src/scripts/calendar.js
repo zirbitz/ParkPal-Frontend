@@ -1,1 +1,0 @@
-// ad an event calendar and other calendar functions with animations
