@@ -14,10 +14,9 @@
 
               <div class="mb-3">
                 <input
-                    type="email"
                     class="form-control"
                     id="email"
-                    placeholder="abc@example.com"
+                    placeholder="abc@example.com or username"
                     v-model="email"
                     required
                     aria-describedby="emailHelp">
@@ -137,9 +136,6 @@ export default {
       if (!this.email) {
         this.emailError = "Email field cannot be blank.";
         valid = false;
-      } else if (!this.email.includes('@')) {
-        this.emailError = "Please enter a valid email address.";
-        valid = false;
       }
 
       if (!this.password) {
@@ -164,15 +160,7 @@ export default {
           withCredentials: true
         });
 
-        const isAuthenticatedUser = await isAuthenticated();
-        const isAdminUser = await isAdmin();
-
-        if (isAuthenticatedUser && isAdminUser) {
-          window.location.href = '/eventOverview';
-        } else {
-          this.errorMessage = "You don't have permission to access this page.";
-          this.showErrorModal = true;
-        }
+        window.location.href = '/eventOverview';
 
       } catch (error) {
         if (error.response) {
