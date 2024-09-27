@@ -160,15 +160,7 @@ export default {
           withCredentials: true
         });
 
-        const isAuthenticatedUser = await isAuthenticated();
-        const isAdminUser = await isAdmin();
-
-        if (isAuthenticatedUser && isAdminUser) {
-          window.location.href = '/eventOverview';
-        } else {
-          this.errorMessage = "You don't have permission to access this page.";
-          this.showErrorModal = true;
-        }
+        window.location.href = '/eventOverview';
 
       } catch (error) {
         if (error.response) {
