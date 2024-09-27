@@ -386,8 +386,6 @@ export default {
       Registration successful!
     </div>
 
-    <!-- User Profile Section -->
-    <div v-if="user">
       <h2>User Profile</h2>
       <form @submit.prevent="updateProfile">
         <div class="row row-cols-1 g-4">
@@ -410,10 +408,6 @@ export default {
           <button type="submit" class="btn btn-primary mt-3">Update Profile</button>
         </div>
       </form>
-    </div>
-    <div v-else>
-      <p>Please log in to view your profile.</p>
-    </div>
 
     <form class="register-form" @submit.prevent="register">
       <div class="row row-cols-1 g-4">

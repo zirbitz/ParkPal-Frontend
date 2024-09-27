@@ -537,11 +537,59 @@ export default {
   z-index: 1000;
 
   .icon {
-    margin-left: px;
+    margin-left: 0;
     display: inline-block;
     width: 36px;
     height:36px;
     background: url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20512%20512%22%3E%3C!--%21Font%20Awesome%20Free%206.6.0%20by%20%40fontawesome%20-%20https%3A//fontawesome.com%20License%20-%20https%3A//fontawesome.com/license/free%20Copyright%202024%20Fonticons%2C%20Inc.--%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M323.8%2034.8c-38.2-10.9-78.1%2011.2-89%2049.4l-5.7%2020c-3.7%2013-10.4%2025-19.5%2035l-51.3%2056.4c-8.9%209.8-8.2%2025%201.6%2033.9s25%208.2%2033.9-1.6l51.3-56.4c14.1-15.5%2024.4-34%2030.1-54.1l5.7-20c3.6-12.7%2016.9-20.1%2029.7-16.5s20.1%2016.9%2016.5%2029.7l-5.7%2020c-5.7%2019.9-14.7%2038.7-26.6%2055.5c-5.2%207.3-5.8%2016.9-1.7%2024.9s12.3%2013%2021.3%2013L448%20224c8.8%200%2016%207.2%2016%2016c0%206.8-4.3%2012.7-10.4%2015c-7.4%202.8-13%209-14.9%2016.7s.1%2015.8%205.3%2021.7c2.5%202.8%204%206.5%204%2010.6c0%207.8-5.6%2014.3-13%2015.7c-8.2%201.6-15.1%207.3-18%2015.2s-1.6%2016.7%203.6%2023.3c2.1%202.7%203.4%206.1%203.4%209.9c0%206.7-4.2%2012.6-10.2%2014.9c-11.5%204.5-17.7%2016.9-14.4%2028.8c.4%201.3%20.6%202.8%20.6%204.3c0%208.8-7.2%2016-16%2016l-97.5%200c-12.6%200-25-3.7-35.5-10.7l-61.7-41.1c-11-7.4-25.9-4.4-33.3%206.7s-4.4%2025.9%206.7%2033.3l61.7%2041.1c18.4%2012.3%2040%2018.8%2062.1%2018.8l97.5%200c34.7%200%2062.9-27.6%2064-62c14.6-11.7%2024-29.7%2024-50c0-4.5-.5-8.8-1.3-13c15.4-11.7%2025.3-30.2%2025.3-51c0-6.5-1-12.8-2.8-18.7C504.8%20273.7%20512%20257.7%20512%20240c0-35.3-28.6-64-64-64l-92.3%200c4.7-10.4%208.7-21.2%2011.8-32.2l5.7-20c10.9-38.2-11.2-78.1-49.4-89zM32%20192c-17.7%200-32%2014.3-32%2032L0%20448c0%2017.7%2014.3%2032%2032%2032l64%200c17.7%200%2032-14.3%2032-32l0-224c0-17.7-14.3-32-32-32l-64%200z%22/%3E%3C/svg%3E') no-repeat center;
+  }
+}
+.register-form {
+  margin-left: 8px;
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #B00101;
+    color: whitesmoke;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 24px;
+
+  }
+
+  .btn-primary .icon {
+    margin-left: 23px;
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/><path d="M10 8l4 4-4 4" fill="white"/></svg>')
+    no-repeat center;
+  }
+
+  .form-label {
+    font-weight: bold;
+  }
+
+  .register-row {
+    margin-top: 12px;
+  }
+
+  .sign-in-redirect {
+    .add-info {
+      text-align: center;
+      font-style: italic;
+      font-weight: 700;
+      font-size: 18px;
+      border: 2px solid #B00101;
+      border-radius: 8px;
+      .add-text {
+        margin: 14px;
+      }
+    }
+
   }
 }
 </style>

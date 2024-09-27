@@ -12,9 +12,13 @@
             </span>
           </span>
 
-          <!-- Event Image -->
+          <!-- Event Image with Placeholder -->
           <a :href="`events/${event.id}.html`">
-            <img :src="event.imageUrl || 'default_image_url.jpg'" :alt="event.title || 'Event image'" />
+            <img class="event-images"
+                :src="event.imageUrl || 'path_to_default_event_image.jpg'"
+                :alt="event.title || 'Event image'"
+                @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
+            />
           </a>
         </li>
       </ul>
@@ -45,11 +49,16 @@
         <button v-if="isCreator(event)" @click="editEvent(event.id)" class="btn btn-secondary ms-2">Edit</button>
       </div>
 
-      <!-- Event Creator Image -->
+      <!-- Event Creator Image with Placeholder -->
       <ul class="list-group list-group-flush">
         <li class="list-group-item">
           <a :href="`user/${event.creatorUserId}.html`">
-            <img :src="event.userPicture || 'default_user_image.jpg'" alt="User picture" />
+            <img
+                class="creator-image"
+                :src="event.userPicture || 'path_to_default_user_image.jpg'"
+                alt="User picture"
+                @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
+            />
           </a>
         </li>
       </ul>
@@ -119,6 +128,10 @@ onMounted(async () => {
     console.error('Error fetching user data:', error);
   }
 });
+
+const addPlaceholder = (event, placeholderSrc) => {
+  event.target.src = placeholderSrc;
+};
 </script>
 
 <style scoped>
@@ -127,7 +140,9 @@ onMounted(async () => {
 }
 
 .card img {
-  width: 100%;
+  display: flex;
+  margin: 0 auto;
+  max-width: 100%;
   height: auto;
 }
 
@@ -145,5 +160,39 @@ onMounted(async () => {
 
 .list-group-item ul li {
   list-style-type: none;
+}
+
+/* Responsive images with max and min size */
+.event-images {
+  height: auto;
+  width: 100%;
+  max-width: 400px;
+  min-width: 200px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.creator-image {
+  height: auto;
+  width: 50%;
+  max-width: 200px;
+  min-width: 100px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+  .event-images {
+    max-width: 300px;
+    min-width: 150px;
+  }
+
+  .creator-image {
+    max-width: 150px;
+    min-width: 80px;
+  }
 }
 </style>

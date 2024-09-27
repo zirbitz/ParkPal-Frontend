@@ -1,9 +1,9 @@
 <template>
-  <nav class="navbar navbar-expand-lg" v-if="authStatus">
+  <nav class="navbar navbar-expand-md" v-if="authStatus">
     <div class="container">
       <router-link :to="{ name:'Home' }" class="navbar-brand">
         <img id="LogoParkpal" src="../assets/icons/Parkpal_Logo.svg" alt="Park Pal Logo">
-        Park Pal
+        <span class="navbar-brand-text">Park Pal</span>
       </router-link>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
               data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
@@ -55,7 +55,7 @@
           <li class="nav-item" v-if="authStatus.isAuthenticated">
             <router-link :to="{ name: 'UserDashboard' }" class="nav-link">
               <img class="rounded-circle" src="../assets/images/arial.jpg" alt="Profile Picture" width="40" height="40">
-              <span>User Profile</span>
+              <span class="user-name-text">User Profile</span>
             </router-link>
           </li>
         </ul>
@@ -68,7 +68,7 @@
 import { ref, onMounted } from 'vue';
 import { isAuthenticated, isAdmin } from '@/service/authService';
 
-// Reactive state to store authentication status
+
 const authStatus = ref({
   isAuthenticated: false,
   isAdmin: false
@@ -87,10 +87,87 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.nav-link {
-  align-content: end;
-  img.rounded-circle {
-    border-radius: 50%;
+.navbar {
+  background-color: #B00101;
+  .nav-link {
+    color: white;
+    font-size: 18px;
+  }
+  .nav-link.router-link-active {
+    color: white;
+    font-weight: 600;
+  }
+}
+
+.navbar .navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.navbar-brand-text {
+  color: white;
+  margin-left: 24px;
+}
+
+.navbar-toggler {
+  color: white;
+  border: 1px solid white;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+@media (min-width: 992px) {
+  .navbar-toggler {
+    display: none;
+  }
+
+  .navbar-collapse {
+    display: flex !important;
+  }
+
+  .navbar-brand-text {
+    font-size: 24px;
+    margin-left: 16px;
+  }
+
+  .nav-link {
+    font-size: 20px;
+  }
+
+  .user-name-text {
+    margin-left: 12px;
+    font-size: 20px;
+  }
+}
+
+
+@media (max-width: 992px) {
+  .user-name-text {
+    display:none;
+  }
+
+  .rounded-circle{
+    height: 2rem;
+    width: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-name-text {
+    display: inline;
+    font-size: 20px;
+    font-weight: 400;
+    margin-left: 12px;
+  }
+
+  .rounded-circle{
+    height: 4rem;
+    width: 4rem;
   }
 }
 </style>
+
