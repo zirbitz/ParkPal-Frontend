@@ -1,6 +1,5 @@
 <script setup>
 
-import Faq from "@/components/info/Faq.vue";
 </script>
 
 <template>
@@ -69,17 +68,17 @@ import Faq from "@/components/info/Faq.vue";
           <ul class="list-unstyled d-flex">
             <li class="ms-3">
               <a class="link-dark" href="https://twitter.com" target="_blank" aria-label="Link to Twitter">
-                <i class="bi bi-twitter" style="font-size: 24px;"></i>
+                <i class="bi bi-twitter"></i>
               </a>
             </li>
             <li class="ms-3">
               <a class="link-dark" href="https://instagram.com" target="_blank" aria-label="Link to Instagram">
-                <i class="bi bi-instagram" style="font-size: 24px;"></i>
+                <i class="bi bi-instagram"></i>
               </a>
             </li>
             <li class="ms-3">
               <a class="link-dark" href="https://facebook.com" target="_blank" aria-label="Link to Facebook">
-                <i class="bi bi-facebook" style="font-size: 24px;"></i>
+                <i class="bi bi-facebook"></i>
               </a>
             </li>
           </ul>
@@ -92,4 +91,13 @@ import Faq from "@/components/info/Faq.vue";
 
 <style scoped>
 
+.footer-custom {
+  .footer-item {
+    color: white;
+  }
+  i {
+    color: white;
+    font-size: 24px;
+  }
+}
 </style>

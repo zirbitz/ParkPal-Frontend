@@ -1,10 +1,6 @@
 @import "webfonts.css";
-@import "nav.css";
 @import "logo.css";
-@import "login.css";
-@import "registration.css";
-@import "footer.css";
-@import "navbar.css";
+
 
 body {
     background: #f5f5f5;

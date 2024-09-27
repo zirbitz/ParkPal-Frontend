@@ -11,7 +11,7 @@
             <p class="login-info-text">Login to Create and Join Events</p>
             <form @submit.prevent="submitForm">
 
-              <!-- Email Input Group -->
+
               <div class="mb-3">
                 <input
                     type="email"
@@ -21,11 +21,11 @@
                     v-model="email"
                     required
                     aria-describedby="emailHelp">
-                <!-- Email Error Message -->
+
                 <div v-if="emailError" class="text-danger">{{ emailError }}</div>
               </div>
 
-              <!-- Password Input Group -->
+
               <div class="mb-3">
                 <div class="input-group">
                   <input
@@ -48,16 +48,16 @@
                   </button>
                 </div>
 
-                <!-- Password Error Message -->
+
                 <div v-if="passwordError" class="text-danger">{{ passwordError }}</div>
               </div>
 
-              <!-- Forgot Password Link -->
+
               <div class="text-center">
                 <a href="#" @click.prevent="showForgotPasswordModal = true">Forgot your Password?</a>
               </div>
 
-              <!-- Submit Button -->
+
               <div class="mt-3 text-center">
                 <button type="submit" class="btn btn-primary">
                   Log in
@@ -66,7 +66,7 @@
               </div>
             </form>
 
-            <!-- Register Button -->
+
             <div class="mt-3 text-center">
               <router-link to="/register" class="btn btn-secondary" aria-label="Register for an account">
                 Register
@@ -78,7 +78,7 @@
       </div>
     </div>
 
-    <!-- Error Modal for network or unexpected issues -->
+
     <div v-if="showErrorModal" class="modal-overlay">
       <div class="modal-content">
         <!-- Close Button -->
@@ -87,14 +87,12 @@
         <p>{{ errorMessage }}</p>
         <p>Trouble logging in? You might not be a user yet.</p>
         <button class="btn btn-secondary mb-3" @click="routeToRegister">Register Now</button>
-        <button @click="closeModal" class="close-btn">Close</button>
+        <button @click="closeModal" class="btn btn-primary">Close</button>
       </div>
     </div>
 
-    <!-- Forgot Password Modal -->
     <div v-if="showForgotPasswordModal" class="modal-overlay">
       <div class="modal-content">
-        <!-- Close Button -->
         <button @click="closeForgotPasswordModal" class="close-modal-btn">×</button>
         <h2>Forgot Password</h2>
         <p>
@@ -104,7 +102,7 @@
         </p>
         <p>Otherwise, you are free to register a new account.</p>
         <button class="btn btn-primary mb-3" @click="routeToRegister">Register Now</button>
-        <button @click="closeForgotPasswordModal" class=" btn btn-secondary">Close</button>
+        <button @click="closeForgotPasswordModal" class="btn btn-secondary">Close</button>
       </div>
     </div>
   </div>
@@ -120,11 +118,11 @@ export default {
       email: '',
       password: '',
       showPassword: false,
-      showErrorModal: false, // For network/server error modal visibility
-      showForgotPasswordModal: false, // For forgot password modal visibility
-      errorMessage: '',      // Error message for modal
-      emailError: '',        // Error message for email field
-      passwordError: '',     // Error message for password field
+      showErrorModal: false,
+      showForgotPasswordModal: false,
+      errorMessage: '',
+      emailError: '',
+      passwordError: '',
     };
   },
   methods: {
@@ -246,17 +244,63 @@ export default {
   font-size: 24px;
   cursor: pointer;
 }
+.card {
+  background: #ffffff;
+  .card-logo {
+    align-items: center;
+    text-align: center;
+    margin:12px;
+  }
 
-.close-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  cursor: pointer;
-  border-radius: 5px;
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #B00101;
+    color: whitesmoke;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+
+  }
+
+  .btn-primary .icon {
+    margin-left: 23px;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/><path d="M10 8l4 4-4 4" fill="white"/></svg>')
+    no-repeat center;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: white;
+    color: #B00101;
+    border: solid 2px #B00101;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+  }
+
+  .btn-secondary .icon {
+    margin-left: 13px;
+    display: inline-block;
+    width: 27px;
+    height: 27px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="%23B00101" stroke="white" stroke-width="2"/><path d="M10 8l4 4-4 4" fill="white"/></svg>') no-repeat center;
+    background-size: contain;
+  }
+
+  .login-info-text {
+    font-style: italic;
+    color: #B00101;
+    text-align: center;
+  }
 }
 
-.close-btn:hover {
-  background-color: #0056b3;
-}
 </style>

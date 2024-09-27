@@ -254,7 +254,7 @@ const submitForm = async (event) => {
           </div>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary">Update Event</button>
+      <button type="submit" class="btn btn-primary">Create Event</button>
     </form>
 
     <div v-if="showSuccessPopup" class="popup">
@@ -329,5 +329,9 @@ const submitForm = async (event) => {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.table-borderless td, .table-borderless th {
+  border: none;
 }
 </style>

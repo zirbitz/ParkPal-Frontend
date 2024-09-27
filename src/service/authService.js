@@ -2,8 +2,6 @@ import axios from 'axios';
 
 export async function fetchUserData() {
     try {
-        // Make a request to the backend to get user data
-        // The browser will automatically include the HttpOnly cookie in the request
         const response = await axios.get('http://localhost:8080/auth/me', {
             withCredentials: true,
         });
@@ -11,7 +9,7 @@ export async function fetchUserData() {
         return response.data;
     } catch (error) {
         console.error('Error fetching user data:', error);
-        return null; // Return null if there's any error (e.g., unauthorized)
+        return null;
     }
 }
 
