@@ -41,14 +41,17 @@
           <li class="nav-item" v-if="authStatus.isAdmin">
             <router-link :to="{name:'AdminDashboard'}" class="nav-link">Admin</router-link>
           </li>
-          <li class="nav-item dropdown">
+          <li class="nav-item" v-if="authStatus.isAuthenticated">
+            <router-link :to="{ name: 'Logout' }" class="nav-link">Logout</router-link>
+          </li>
+
+          <li class="nav-item dropdown" v-else>
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               Login
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li v-if="!authStatus.isAuthenticated"><router-link :to="{ name: 'Login' }" class="dropdown-item">Login</router-link></li>
-              <li v-if="!authStatus.isAuthenticated"><router-link :to="{ name: 'Register' }" class="dropdown-item">Register</router-link></li>
-              <li v-if="authStatus.isAuthenticated"><router-link :to="{ name: 'Logout' }" class="dropdown-item">Logout</router-link></li>
+              <li><router-link :to="{ name: 'Login' }" class="dropdown-item">Login</router-link></li>
+              <li><router-link :to="{ name: 'Register' }" class="dropdown-item">Register</router-link></li>
             </ul>
           </li>
 

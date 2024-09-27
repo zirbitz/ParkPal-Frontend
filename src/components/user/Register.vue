@@ -338,7 +338,7 @@ export default {
       <div class="row g-3 register-row">
         <div class="col-md-5">
           <label for="validationServer01" class="form-label">First name</label>
-          <input type="text" placeholder="First Name" class="form-control" :class="{'is-invalid': !firstNameValid && firstNameDirty, 'is-valid': firstNameValid && firstNameDirty}" id="validationServer01" v-model="firstName" @blur="validateFirstName" required>
+          <input type="text" placeholder="First Name" class="form-control" :class="{'is-invalid': !firstNameValid && firstNameDirty, 'is-valid': firstNameValid && firstNameDirty}" id="validationServer01" v-model="firstName" @blur="validateFirstName" >
           <div v-if="!firstNameValid && firstNameDirty" class="invalid-feedback">
             Please enter a valid first name.
           </div>
@@ -348,7 +348,7 @@ export default {
         </div>
         <div class="col-md-5">
           <label for="validationServer02" class="form-label">Last name</label>
-          <input type="text" placeholder="Last Name" class="form-control" :class="{'is-invalid': !lastNameValid && lastNameDirty, 'is-valid': lastNameValid && lastNameDirty}" id="validationServer02" v-model="lastName" @blur="validateLastName" required>
+          <input type="text" placeholder="Last Name" class="form-control" :class="{'is-invalid': !lastNameValid && lastNameDirty, 'is-valid': lastNameValid && lastNameDirty}" id="validationServer02" v-model="lastName" @blur="validateLastName" >
           <div v-if="!lastNameValid && lastNameDirty" class="invalid-feedback">
             Please enter a valid last name.
           </div>
@@ -362,7 +362,7 @@ export default {
         <div class="col-md-5">
           <label for="validationServerEmail" class="form-label">E-Mail</label>
           <div class="input-group has-validation">
-            <input type="email" placeholder="your@email.com" class="form-control" :class="{'is-invalid': !emailValid && emailDirty, 'is-valid': emailValid && emailDirty}" id="validationServerEmail" v-model="email" @blur="validateEmail" required>
+            <input type="email" placeholder="your@email.com" class="form-control" :class="{'is-invalid': !emailValid && emailDirty, 'is-valid': emailValid && emailDirty}" id="validationServerEmail" v-model="email" @blur="validateEmail" >
             <div v-if="!emailValid && emailDirty" class="invalid-feedback">
               Please choose a valid Email.
             </div>
@@ -375,7 +375,7 @@ export default {
           <label for="validationServerUsername" class="form-label">Username</label>
           <div class="input-group has-validation">
             <span class="input-group-text" id="inputGroupPrepend3">@</span>
-            <input type="text" placeholder="yourUsername" class="form-control" :class="{'is-invalid': !usernameValid && usernameDirty, 'is-valid': usernameValid && usernameDirty}" id="validationServerUsername" v-model="username" @blur="validateUsername" required>
+            <input type="text" placeholder="yourUsername" class="form-control" :class="{'is-invalid': !usernameValid && usernameDirty, 'is-valid': usernameValid && usernameDirty}" id="validationServerUsername" v-model="username" @blur="validateUsername">
             <div v-if="!usernameValid && usernameDirty" class="invalid-feedback">
               Please choose a username.
             </div>
@@ -392,7 +392,7 @@ export default {
       </div>
 
       <div class="register-row input-group mb-3">
-        <input placeholder="Password" :type="showPassword ? 'text' : 'password'" class="form-control" id="password" v-model="password" @input="passwordErrorMessage = ''" required>
+        <input placeholder="Password" :type="showPassword ? 'text' : 'password'" class="form-control" id="password" v-model="password" @input="passwordErrorMessage = ''">
         <button class="btn btn-outline-secondary" type="button" @click="showPassword = !showPassword">
           <span>{{showPassword ? 'Hide' : 'Show'}}</span>
         </button>
@@ -400,7 +400,7 @@ export default {
 
 
       <div class="register-row input-group mb-3">
-        <input placeholder="Repeat your Password" :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword" v-model="confirmPassword" @blur="checkPasswordsMatch" required>
+        <input placeholder="Repeat your Password" :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword" v-model="confirmPassword" @blur="checkPasswordsMatch" >
         <button class="btn btn-outline-secondary" type="button" @click="showConfirmPassword = !showConfirmPassword">
           <span v-if="showConfirmPassword">Hide</span>
           <span v-else>Show</span>
@@ -423,7 +423,7 @@ export default {
       <div class="row g-3 register-row">
         <div class="col-md-4">
           <label for="validationServerCountry" class="form-label">Country</label>
-          <select class="form-select" :class="{'is-invalid': !countryValid && countryDirty, 'is-valid': countryValid && countryDirty}" id="validationServerCountry" v-model="country" required>
+          <select class="form-select" :class="{'is-invalid': !countryValid && countryDirty, 'is-valid': countryValid && countryDirty}" id="validationServerCountry" v-model="country" >
             <option selected disabled value="">Choose...</option>
             <option v-for="country in countries" :key="country.id" :value="country.id">{{ country.name }}</option>
           </select>
@@ -432,7 +432,7 @@ export default {
 
       <div class="col-md-3">
         <label for="validationServer04" class="form-label">Gender</label>
-        <select class="form-select" :class="getValidationClass('gender')" id="validationServer04" v-model="gender" @change="validateGender" required>
+        <select class="form-select" :class="getValidationClass('gender')" id="validationServer04" v-model="gender" @change="validateGender" >
           <option selected disabled value="">Choose...</option>
           <option v-for="option in genderOptions" :key="option" :value="option">{{ option }}</option>
         </select>
@@ -445,7 +445,7 @@ export default {
       </div>
       <div v-if="gender === 'OTHER'" class="col-md-5">
         <label for="customSalutationInput" class="form-label">Specify Salutation</label>
-        <input type="text" class="form-control" :class="getValidationClass('salutation')" id="customSalutationInput" v-model="salutation" @blur="validateSalutation" required>
+        <input type="text" class="form-control" :class="getValidationClass('salutation')" id="customSalutationInput" v-model="salutation" @blur="validateSalutation">
         <div v-if="!salutationValid && salutationDirty" class="invalid-feedback" id="salutationFeedback">
           {{ getValidationMessage('salutation') }}
         </div>
@@ -457,7 +457,7 @@ export default {
       <div class="row g-3 register-row">
         <div class="col-12">
           <div class="form-check">
-            <input class="form-check-input" :class="{'is-invalid': !termsValid && termsDirty, 'is-valid': termsValid && termsDirty}" type="checkbox" v-model="terms" @change="validateTerms" id="invalidCheck3Terms" required>
+            <input class="form-check-input" :class="{'is-invalid': !termsValid && termsDirty, 'is-valid': termsValid && termsDirty}" type="checkbox" v-model="terms" @change="validateTerms" id="invalidCheck3Terms" >
             <label class="form-check-label" for="invalidCheck3Terms">
               Agree to terms and conditions. See more details in:
               <router-link to="/usageAgreement">Usage Agreement</router-link>
@@ -472,7 +472,7 @@ export default {
         </div>
         <div class="col-12">
           <div class="form-check">
-            <input class="form-check-input" :class="{'is-invalid': !dsvgoValid && dsvgoDirty, 'is-valid': dsvgoValid && dsvgoDirty}" type="checkbox" v-model="dsvgo" @change="validateDsvgo" id="invalidCheck3DSVGO" required>
+            <input class="form-check-input" :class="{'is-invalid': !dsvgoValid && dsvgoDirty, 'is-valid': dsvgoValid && dsvgoDirty}" type="checkbox" v-model="dsvgo" @change="validateDsvgo" id="invalidCheck3DSVGO" >
             <label class="form-check-label" for="invalidCheck3DSVGO">
               Agree to storage and usage of User data. Get more info:
               <router-link to="/DSVGO">Datenschutzgrundverordnung</router-link>
