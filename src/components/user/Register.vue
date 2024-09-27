@@ -171,24 +171,6 @@ export default {
       }
       return true;
     },
-
-    createFormData() {
-      const formData = new FormData();
-      formData.append('firstName', this.firstName);
-      formData.append('lastName', this.lastName);
-      formData.append('salutation', this.salutation);
-      formData.append('gender', this.gender);
-      formData.append('email', this.email);
-      formData.append('username', this.username);
-      formData.append('countryId', this.country);
-      //formData.append('address', this.address);
-      //formData.append('city', this.city);
-      //formData.append('zip', this.zip);
-      //formData.append('userPicture', this.userPicture);
-      //formData.append('terms', this.terms);
-      //formData.append('dsvgo', this.dsvgo);
-      return formData;
-    },
     validatePassword() {
       // Regular expression to ensure password is at least 12 characters long and contains at least one special character
       const passwordPattern = /^(?=.*[!@#$%^&*])[A-Za-z\d@$!%*?&]{12,}$/;
