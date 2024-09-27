@@ -70,8 +70,6 @@ export default {
         return;
       }
 
-      /* Uncomment this code to enable form validation if you want to test it if it's working
-      // i don't want to validate the form
       this.markAllFieldsDirty();
       this.runValidations();
 
@@ -83,8 +81,6 @@ export default {
       if (!this.validateUserPicture()) {
         return;
       }
-      */
-
 
       /*Connect to API correctly later*/
       const formData = {
@@ -392,7 +388,7 @@ export default {
 
       <div v-if="passwordErrorMessage" class="alert alert-danger" role="alert" style="display: block; ">
 
-        {{ passwordErrorMessage }} <!--Add a better warnig message & Lock btn-->
+        {{ passwordErrorMessage }}
       </div>
 
       <div class="register-row input-group mb-3">
