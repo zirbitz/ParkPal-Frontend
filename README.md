@@ -27,3 +27,6 @@ npm run dev
 ```sh
 npm run build
 ```
+
+## Environment and further Setup
+This Frontend is connecting to the backend provided by https://github.com/osama004/ParkPal-Backend
