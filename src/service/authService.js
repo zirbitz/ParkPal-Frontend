@@ -15,8 +15,6 @@ export async function fetchUserData() {
 
 export async function isAuthenticated() {
     const userData = await fetchUserData();
-    //TODO: Add validation logic here.
-    // If user data is fetched, the user is authenticated
     return userData !== null;
 }
 

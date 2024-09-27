@@ -129,9 +129,9 @@ onMounted(async () => {
   }
 });
 
-const addPlaceholder = (event, placeholderSrc) => {
-  event.target.src = placeholderSrc;
-};
+//const addPlaceholder = (event, placeholderSrc) => {
+//  event.target.src = placeholderSrc;
+//};
 </script>
 
 <style scoped>
