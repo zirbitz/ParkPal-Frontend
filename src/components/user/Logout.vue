@@ -28,7 +28,8 @@
 
 <script>
 import axios from 'axios';
-import { isAdmin, isAuthenticated } from "@/service/authService.js";
+import {isAdmin, isAuthenticated} from "@/service/authService.js";
+import {API_ROUTES} from "@/apiRoutes.js";
 
 export default {
   computed: {
@@ -54,7 +55,7 @@ export default {
       if (this.isAuthenticated) {
         try {
           await axios.post(
-              'http://localhost:8080/auth/logout',
+              API_ROUTES.AUTH_LOGOUT,
               {},
               { withCredentials: true }
           );

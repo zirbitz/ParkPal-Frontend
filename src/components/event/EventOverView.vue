@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import EventCard from "@/components/event/EventCard.vue";
 import axios from 'axios';
+import {API_ROUTES} from "@/apiRoutes.js";
 
 const events = ref([]); // All events from API
 const currentPage = ref(1); // Track the current page
@@ -10,7 +11,7 @@ const eventsPerPage = ref(5); // Number of events per page
 // Fetch all events from the backend
 const fetchAllEvents = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/events');
+    const response = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS());
     if (Array.isArray(response.data)) {
       events.value = response.data;
     } else {

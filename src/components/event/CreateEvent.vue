@@ -2,7 +2,7 @@
 import {onMounted, ref} from 'vue';
 import axios from 'axios';
 import {fetchUserData} from "@/service/authService.js";
-
+import {API_ROUTES} from "@/apiRoutes.js";
 
 
 const mediaFiles = ref([]);
@@ -15,7 +15,7 @@ const showSuccessPopup = ref(false);
 // Fetch parks from the API on component mount
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8080/parks');
+    const response = await axios.get(API_ROUTES.PARKS);
     parks.value = response.data;
   } catch (error) {
     console.error('Error fetching parks:', error);
@@ -84,7 +84,7 @@ const uploadMediaFiles = async () => {
       formData.append('file', file);
 
       try {
-        const response = await axios.post('http://localhost:8080/files', formData, {
+        const response = await axios.post(API_ROUTES.FILES, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data; // Assuming the response contains the ID of the uploaded file
@@ -159,7 +159,7 @@ const submitForm = async (event) => {
     };
 
     // Send the event creation request
-    const response = await axios.post('http://localhost:8080/events', formData);
+    const response = await axios.post(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS, formData);
 
     console.log('Event created successfully:', response.data);
 

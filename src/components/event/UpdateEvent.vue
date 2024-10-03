@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import {onMounted, ref} from 'vue';
 import axios from 'axios';
-import { fetchUserData } from "@/service/authService.js";
-import { useRouter } from 'vue-router'; // Import useRouter
+import {fetchUserData} from "@/service/authService.js";
+import {useRouter} from 'vue-router';
+import {API_ROUTES} from "@/apiRoutes.js"; // Import useRouter
 
 const router = useRouter(); // Initialize router
 
@@ -36,7 +37,7 @@ const formData = ref({
 // Fetch event data to populate the form
 const fetchEventData = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/events/${props.eventId}`);
+    const response = await axios.get(API_ROUTES.EVENTS_BY_ID(props.eventId));
     const event = response.data;
     formData.value = {
       eventId: event.eventId,
@@ -57,7 +58,7 @@ const fetchEventData = async () => {
 // Fetch parks from the API on component mount
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8080/parks');
+    const response = await axios.get(API_ROUTES.PARKS);
     parks.value = response.data;
   } catch (error) {
     console.error('Error fetching parks:', error);
@@ -126,7 +127,7 @@ const uploadMediaFiles = async () => {
       formData.append('file', file);
 
       try {
-        const response = await axios.post('http://localhost:8080/files', formData, {
+        const response = await axios.post(API_ROUTES.FILES, formData, {
           headers: {'Content-Type': 'multipart/form-data'}
         });
         return response.data;
@@ -197,7 +198,7 @@ const submitForm = async (event) => {
     };
 
     // Send PUT request to update the event
-    const response = await axios.put(`http://localhost:8080/events/${props.eventId}`, updatedEvent);
+    const response = await axios.put(API_ROUTES.EVENTS_BY_ID(props.eventId), updatedEvent);
 
     console.log('Event updated successfully:', response.data);
 

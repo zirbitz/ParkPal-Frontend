@@ -4,6 +4,7 @@
 import CountryService from "@/service/countryService.js";
 import axios from "axios";
 import {fetchUserData} from "@/service/authService.js";
+import {API_ROUTES} from "@/apiRoutes.js";
 
 export default {
   data() {
@@ -31,7 +32,8 @@ export default {
       password: '',
       country: '',
       countries: [],
-      userPicture: null,
+      profilePictureId: '',
+      profilePictureUrl: '',
 
       showSuccessMessage: false,
       showFlashMessage: false,
@@ -45,7 +47,7 @@ export default {
         const userData = await fetchUserData();
         if (userData) {
           const userId = userData.id;
-          const userResponse = await axios.get(`http://localhost:8080/users/${userId}`, {
+          const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId), {
             withCredentials: true,
           });
           this.user = userResponse.data;
@@ -59,6 +61,8 @@ export default {
           this.email = this.user.email;
           this.username = this.user.userName;
           this.country = this.user.countryId;
+          this.profilePictureUrl = this.user.profilePictureId ?? null;
+          console.log("am this.user.profilePictureId:" + this.user.profilePictureId);
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -77,8 +81,11 @@ export default {
           id: this.userid,
           countryId: this.country,
         };
+        if (this.profilePictureId) {
+          formData.profilePictureId = this.profilePictureId;
+        }
         console.log('Updating profile with data:', formData);
-        const response = await axios.put(`http://localhost:8080/users/${this.user.id}`, formData, {
+        const response = await axios.put(API_ROUTES.USERS_BY_ID(this.user.id), formData, {
           withCredentials: true,
         });
         this.user = response.data;
@@ -92,7 +99,32 @@ export default {
         alert('Error updating profile.');
       }
     },
+    async handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const response = await axios.post(API_ROUTES.FILES, formData, {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          })
+          if (response.status === 200) {
+            const message = response.data
+            this.profilePictureId = response.data;
+            this.profilePictureUrl = URL.createObjectURL(file);
+          }
+
+        } catch (error) {
+          console.error('Failed to upload file:', error);
+        }
+      }
+    },
   },
+
 
   watch: {}
 
@@ -154,7 +186,11 @@ export default {
               </select>
             </div>
             <div class="mb-3">
-              <img class="rounded-circle" :src="user.picture" alt="Profile Picture" width="100" height="100">
+              <label for="profilePicture" class="form-label">Profile Picture</label>
+              <input type="file" class="form-control" id="profilePicture" @change="handleFileUpload">
+              <div v-if="profilePictureUrl" class="mt-3">
+                <img :src="profilePictureUrl" alt="Profile Picture" class="img-thumbnail" width="150">
+              </div>
             </div>
             <button type="submit" class="btn btn-primary">Update Profile</button>
           </form>
