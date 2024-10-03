@@ -1,4 +1,6 @@
 <script>
+import {API_ROUTES} from "@/apiRoutes.js";
+
 export default {
   name: "PictureViewer",
   props: {
@@ -19,7 +21,7 @@ export default {
   methods: {
     async fetchPicture() {
       try {
-        const response = await fetch(`http://localhost:8080/files/${this.externalId}`);
+        const response = await fetch(API_ROUTES.FILES_BY_EXTERNAL_ID(this.externalId));
         if (!response.ok) {
           if (response.status === 404) {
             this.error = 'Picture not found (404).';

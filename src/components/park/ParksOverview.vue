@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import ParkCard from "@/components/park/ParkCard.vue";
 import ParkInfo from "@/components/park/ParkInfo.vue";
+import {API_ROUTES} from "@/apiRoutes.js";
 
 // Refs for parks, selected park, and search query
 const parks = ref([]);
@@ -11,7 +12,7 @@ const searchQuery = ref('');  // Make sure searchQuery is a ref
 // Fetch parks from backend
 const fetchParks = async () => {
   try {
-    const response = await fetch('http://localhost:8080/parks');
+    const response = await fetch(API_ROUTES.PARKS);
     if (response.ok) {
       const data = await response.json();
       parks.value = data;

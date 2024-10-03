@@ -1,6 +1,7 @@
 <script>
 import CountryService from "@/service/countryService.js";
 import axios from "axios";
+import {API_ROUTES} from "@/apiRoutes.js";
 
 export default {
   data() {
@@ -105,7 +106,7 @@ export default {
 
       try {
 
-        const response = await axios.post('http://localhost:8080/auth/register', formData
+        const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData
         )
 
         // Registration successful

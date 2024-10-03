@@ -109,7 +109,7 @@
 
 <script>
 import axios from 'axios';
-import { isAdmin, isAuthenticated } from "@/service/authService.js";
+import {API_ROUTES} from "@/apiRoutes.js";
 
 export default {
   data() {
@@ -156,7 +156,7 @@ export default {
       };
 
       try {
-        const response = await axios.post('http://localhost:8080/auth/login', loginData, {
+        const response = await axios.post(API_ROUTES.AUTH_LOGIN, loginData, {
           withCredentials: true
         });
 

@@ -1,8 +1,9 @@
 import axios from 'axios';
+import {API_ROUTES} from "@/apiRoutes.js";
 
 export async function fetchUserData() {
     try {
-        const response = await axios.get('http://localhost:8080/auth/me', {
+        const response = await axios.get(API_ROUTES.AUTH_ME, {
             withCredentials: true,
         });
         console.log(response.data)
