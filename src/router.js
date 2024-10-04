@@ -15,7 +15,9 @@ import UserDashboard from '@/components/user/UserDashboard.vue';
 import Impressum from '@/components/Impressum.vue';
 import AdminDashboard from '@/components/admin/AdminDashboard.vue';
 import PictureViewer from "@/components/PictureViewer.vue";
-import UpdateEvent from '@/components/event/UpdateEvent.vue';
+import UpdateEvent from '@/components/event/EditEvent.vue';
+import CreatePark from "@/components/park/CreatePark.vue";
+import EditPark from "@/components/park/EditPark.vue";
 
 
 // Routes configuration
@@ -45,6 +47,19 @@ const routes = [
         path: '/parksoverview',
         name: 'ParksOverview',
         component: ParksOverview,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/createpark',
+        name: 'CreatePark',
+        component: CreatePark,
+        meta: { requiresAuth: true, requiresAdmin: true},
+    },
+    {
+        path: '/editpark',
+        name: 'EditPark',
+        component: EditPark,
+        meta: { requiresAuth: true, requiresAdmin: true},
     },
     {
         path: '/register',
@@ -54,7 +69,7 @@ const routes = [
     {
         path: '/logout',
         name: 'Logout',
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true},
         component: Logout,
     },
     {
@@ -91,8 +106,8 @@ const routes = [
         props: true,
     },
     {
-        path: '/updateEvent/:eventId',
-        name: 'UpdateEvent',
+        path: '/editEvent/:eventId',
+        name: 'EditEvent',
         component: UpdateEvent,
         props: true,
         meta: { requiresAuth: true },

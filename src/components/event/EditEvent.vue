@@ -1,9 +1,9 @@
 <script setup>
-import {onMounted, ref} from 'vue';
+import { onMounted, ref } from 'vue';
 import axios from 'axios';
-import {fetchUserData} from "@/service/authService.js";
-import {useRouter} from 'vue-router';
-import {API_ROUTES} from "@/apiRoutes.js"; // Import useRouter
+import { fetchUserData } from "@/service/authService.js";
+import { useRouter } from 'vue-router';
+import { API_ROUTES } from "@/apiRoutes.js"; // Import useRouter
 
 const router = useRouter(); // Initialize router
 
@@ -22,6 +22,7 @@ const updateMediaFileIds = ref([]); // To store the IDs of uploaded media files
 const parks = ref([]);
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
+const showDeletePopup = ref(false); // Show popup on delete success
 
 // Form data
 const formData = ref({
@@ -52,6 +53,24 @@ const fetchEventData = async () => {
     selectedParkId.value = event.parkId;
   } catch (error) {
     console.error('Error fetching event data:', error);
+  }
+};
+
+// Delete the event
+const deleteEvent = async () => {
+  try {
+    const confirmed = window.confirm("Are you sure you want to delete this event?");
+    if (!confirmed) return;
+
+    await axios.delete(API_ROUTES.EVENTS_BY_ID(props.eventId));
+    showDeletePopup.value = true;
+
+    // Navigate back to EventOverview.vue after success
+    setTimeout(() => {
+      router.push('/eventOverview');
+    }, 2000);
+  } catch (error) {
+    console.error('Error deleting event:', error.response?.data || error.message);
   }
 };
 
@@ -215,6 +234,7 @@ const submitForm = async (event) => {
 };
 </script>
 
+
 <template>
   <div class="container mt-4">
     <h1 class="text-center">Update Event</h1>
@@ -249,25 +269,32 @@ const submitForm = async (event) => {
           <button class="btn btn-outline-secondary" type="button" @click="removeAllMediaFiles">Remove All</button>
         </div>
         <div class="media-preview">
-          <div v-for="(file, index) in mediaFiles" :key="index" class="media-item">
-            <div v-if="file.type.startsWith('image/')">
-              <img :src="file.previewUrl" :alt="file.name" class="img-preview">
-            </div>
-            <div v-else-if="file.type.startsWith('video/')">
-              <video :src="file.previewUrl" controls class="video-preview"></video>
-            </div>
-            <p>{{ file.name }}</p>
-            <button class="btn btn-outline-danger btn-sm" @click="removeMediaFile(index)">Remove</button>
+          <div v-for="(file, index) in mediaFiles" :key="index" class="file-item">
+            <img :src="file.previewUrl" alt="File preview" class="preview-image">
+            <button type="button" @click="removeMediaFile(index)">Remove</button>
           </div>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary">Update Event</button>
+
+      <div class="row text-center mb-3">
+        <div class="col-md-6">
+          <button type="submit" class="btn btn-primary">Update Event</button>
+        </div>
+        <div class="col-md-6">
+          <button type="button" class="btn btn-tertiary" @click="deleteEvent">Delete Event</button>
+        </div>
+      </div>
       <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
         Event updated successfully!
+      </div>
+
+      <div v-if="showDeletePopup" class="alert alert-danger mt-3" role="alert">
+        Event deleted successfully!
       </div>
     </form>
   </div>
 </template>
+
 
 <style scoped>
 .custom-width-input {

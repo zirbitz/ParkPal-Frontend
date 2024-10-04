@@ -95,7 +95,7 @@ const props = defineProps({
 // Vue Router setup
 const router = useRouter();
 
-// Function to navigate to UpdateEvent.vue page
+// Function to navigate to EditEvent.vue page
 const editEvent = (eventId) => {
   router.push({ name: 'UpdateEvent', params: { eventId } });
 };

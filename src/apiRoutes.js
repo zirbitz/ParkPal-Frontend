@@ -49,8 +49,9 @@ function buildEventsUrl(userId, parkId) {
     if (parkId !== undefined && parkId !== '') {
         url += `parkId=${parkId}`;
     }
+    url = url.endsWith('&') ? url.slice(0, -1) : url;
     console.log("url: ", url);
-    return url.endsWith('&') ? url.slice(0, -1) : url;
+    return url;
 }
 
 function buildEventTagsUrl(eventId) {
