@@ -158,8 +158,11 @@ const submitForm = async (event) => {
       createMediaFileIds: createMediaFileIds.value, // IDs of uploaded media files
     };
 
+    // Build url
+    const url = API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userId, selectedParkId.value);
+
     // Send the event creation request
-    const response = await axios.post(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS, formData);
+    const response = await axios.post(url, formData);
 
     console.log('Event created successfully:', response.data);
 
