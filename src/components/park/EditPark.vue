@@ -162,7 +162,7 @@ export default {
     },
     async fetchParks() {
       try {
-        const response = await axios.get(API_ROUTES.PARKS); // Fetch all parks without pagination
+        const response = await axios.get(API_ROUTES.PARKS, {withCredentials: true}); // Fetch all parks without pagination
         this.parks = response.data;
         this.filteredParks = this.parks; // Initially, all parks are displayed
       } catch (error) {
@@ -171,7 +171,7 @@ export default {
     },
     async fetchCountries() {
       try {
-        const response = await axios.get(API_ROUTES.COUNTRIES);
+        const response = await axios.get(API_ROUTES.COUNTRIES, {withCredentials: true});
         this.countries = response.data.sort((a, b) => a.name.localeCompare(b.name));
       } catch (error) {
         console.error('Error fetching countries:', error);
@@ -203,11 +203,11 @@ export default {
           ...this.form,
           address: {
             ...this.form.address,
-            country: {id: this.form.address.country.id} // Send only country ID
+            country: this.form.address.country.id // Send only country ID
           }
         };
         try {
-          const response = await axios.put(`${API_ROUTES.PARKS}/${this.selectedPark.id}`, payload);
+          const response = await axios.put(`${API_ROUTES.PARKS}/${this.selectedPark.id}`, payload, {withCredentials: true});
           console.log('Park updated successfully', response.data);
         } catch (error) {
           console.error('Error updating park:', error);
@@ -218,7 +218,7 @@ export default {
     async deletePark() {
       if (confirm('Are you sure you want to delete this park?')) {
         try {
-          await axios.delete(`${API_ROUTES.PARKS}/${this.selectedPark.id}`);
+          await axios.delete(`${API_ROUTES.PARKS}/${this.selectedPark.id}`, {withCredentials: true});
           console.log('Park deleted successfully');
           this.selectedPark = null;
           this.form = {

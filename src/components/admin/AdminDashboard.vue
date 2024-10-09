@@ -43,7 +43,7 @@ const paginatedEvents = computed(() => {
 // Fetch users and events on component mount
 const fetchUsers = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/users'); // Ensure endpoint is correct
+    const response = await axios.get('http://localhost:8080/users', {withCredentials: true}); // Ensure endpoint is correct
     users.value = response.data;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -52,7 +52,7 @@ const fetchUsers = async () => {
 
 const fetchEvents = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/events'); // Ensure endpoint is correct
+    const response = await axios.get('http://localhost:8080/events', {withCredentials: true}); // Ensure endpoint is correct
     events.value = response.data;
   } catch (error) {
     console.error("Error fetching events:", error);
@@ -61,7 +61,7 @@ const fetchEvents = async () => {
 const deleteEvent = async (index) => {
   try {
     const event = paginatedEvents.value[index];
-    await axios.delete(`http://localhost:8080/events/${event.id}`); // Assuming DELETE API exists
+    await axios.delete(`http://localhost:8080/events/${event.id}`, {withCredentials: true}); // Assuming DELETE API exists
     events.value = events.value.filter(e => e.id !== event.id); // Remove event from list
   } catch (error) {
     console.error("Error deleting event:", error);
@@ -100,7 +100,7 @@ const goToEventPage = (page) => {
 const deleteUser = async (index) => {
   try {
     const user = paginatedUsers.value[index];
-    await axios.delete(`http://localhost:8080/users/${user.id}`); // Assuming DELETE API exists
+    await axios.delete(`http://localhost:8080/users/${user.id}`, {withCredentials: true}); // Assuming DELETE API exists
     users.value = users.value.filter(u => u.id !== user.id); // Remove user from list
   } catch (error) {
     console.error("Error deleting user:", error);

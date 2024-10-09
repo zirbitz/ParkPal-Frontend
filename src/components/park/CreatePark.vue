@@ -125,8 +125,11 @@ export default {
       try {
         // Fetch the list of countries from the backend
         const response = await axios.get(API_ROUTES.COUNTRIES);
-        // Sort the countries by name
-        this.countries = response.data.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Sort the countries by name (assuming response.data contains an array of country objects)
+        this.countries = response.data.sort((a, b) => {
+          return a.name.localeCompare(b.name);
+        });
       } catch (error) {
         console.error('Error fetching countries:', error);
       }
@@ -141,11 +144,11 @@ export default {
           ...this.form,
           address: {
             ...this.form.address,
-            country: this.form.address.country // Include full country object
+            country: this.form.address.country.id
           }
         };
         try {
-          const response = await axios.post(API_ROUTES.PARKS, payload);
+          const response = await axios.post(API_ROUTES.PARKS, payload, {withCredentials: true});
           console.log('Park created successfully', response.data);
         } catch (error) {
           console.error('Error creating park:', error);

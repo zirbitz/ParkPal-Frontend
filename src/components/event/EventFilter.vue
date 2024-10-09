@@ -69,7 +69,7 @@ const error = ref(null);
 // Function to fetch all events and then filter them on the frontend
 const fetchFilteredEvents = async () => {
   try {
-    const response = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS());
+    const response = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(), {withCredentials: true});
     if (Array.isArray(response.data)) {
       allEvents.value = response.data.filter(event => event && event.id);  // Store all fetched events
       await filterEvents();  // Apply the filters after fetching
@@ -122,7 +122,7 @@ const filterEvents = async () => {
 // Function to fetch park ID by park name
 const fetchParkIdByName = async (parkName) => {
   try {
-    const response = await axios.get(API_ROUTES.PARKS);
+    const response = await axios.get(API_ROUTES.PARKS, {withCredentials: true});
     const parks = response.data;
     const park = parks.find(p => p.name.toLowerCase() === parkName.toLowerCase());
     return park ? park.id : null;

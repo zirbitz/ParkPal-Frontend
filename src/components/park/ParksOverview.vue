@@ -12,11 +12,12 @@ const searchQuery = ref('');  // Make sure searchQuery is a ref
 // Fetch parks from backend
 const fetchParks = async () => {
   try {
-    const response = await fetch(API_ROUTES.PARKS);
+    const response = await fetch(API_ROUTES.PARKS, { credentials: 'include' });
+    console.log(response)
     if (response.ok) {
       const data = await response.json();
       parks.value = data;
-      console.log(data)// No need to fetch events separately, they are included in the ParkDto
+      console.log(data)
     } else {
       console.error('Failed to fetch parks. Status:', response.status, 'StatusText:', response.statusText);
     }
@@ -86,7 +87,7 @@ const filteredParks = computed(() => {
         <ParkCard id="park-card"
             :title="park.name"
             :address="park.address"
-            :events="park.parkEventDtos"
+            :events="park.eventDtos"
             @click="showParkSection(park)" >
         </ParkCard>
       </div>
@@ -107,7 +108,7 @@ const filteredParks = computed(() => {
                 :title="selectedPark.name"
                 :description="selectedPark.description"
                 :address="selectedPark.address"
-                :events="selectedPark.parkEventDtos"
+                :events="selectedPark.eventDtos"
             />
           </div>
         </div>

@@ -38,7 +38,7 @@ const formData = ref({
 // Fetch event data to populate the form
 const fetchEventData = async () => {
   try {
-    const response = await axios.get(API_ROUTES.EVENTS_BY_ID(props.eventId));
+    const response = await axios.get(API_ROUTES.EVENTS_BY_ID(props.eventId,{withCredentials: true}));
     const event = response.data;
     formData.value = {
       eventId: event.eventId,
@@ -62,7 +62,7 @@ const deleteEvent = async () => {
     const confirmed = window.confirm("Are you sure you want to delete this event?");
     if (!confirmed) return;
 
-    await axios.delete(API_ROUTES.EVENTS_BY_ID(props.eventId));
+    await axios.delete(API_ROUTES.EVENTS_BY_ID(props.eventId),{withCredentials: true});
     showDeletePopup.value = true;
 
     // Navigate back to EventOverview.vue after success
@@ -77,7 +77,7 @@ const deleteEvent = async () => {
 // Fetch parks from the API on component mount
 onMounted(async () => {
   try {
-    const response = await axios.get(API_ROUTES.PARKS);
+    const response = await axios.get(API_ROUTES.PARKS,{withCredentials: true});
     parks.value = response.data;
   } catch (error) {
     console.error('Error fetching parks:', error);
@@ -146,7 +146,7 @@ const uploadMediaFiles = async () => {
       formData.append('file', file);
 
       try {
-        const response = await axios.post(API_ROUTES.FILES, formData, {
+        const response = await axios.post(API_ROUTES.FILES, formData, {withCredentials: true,
           headers: {'Content-Type': 'multipart/form-data'}
         });
         return response.data;
@@ -217,7 +217,7 @@ const submitForm = async (event) => {
     };
 
     // Send PUT request to update the event
-    const response = await axios.put(API_ROUTES.EVENTS_BY_ID(props.eventId), updatedEvent);
+    const response = await axios.put(API_ROUTES.EVENTS_BY_ID(props.eventId), updatedEvent, {withCredentials: true});
 
     console.log('Event updated successfully:', response.data);
 
