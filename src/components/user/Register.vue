@@ -107,7 +107,7 @@ export default {
       try {
 
         const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData
-        )
+        , {withCredentials: true})
 
         // Registration successful
         //alert('Registration successful!');

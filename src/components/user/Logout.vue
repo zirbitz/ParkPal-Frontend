@@ -56,7 +56,7 @@ export default {
         try {
           await axios.post(
               API_ROUTES.AUTH_LOGOUT,
-              {},
+              "",
               { withCredentials: true }
           );
           localStorage.removeItem("token");

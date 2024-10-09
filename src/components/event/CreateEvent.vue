@@ -15,7 +15,7 @@ const showSuccessPopup = ref(false);
 // Fetch parks from the API on component mount
 onMounted(async () => {
   try {
-    const response = await axios.get(API_ROUTES.PARKS);
+    const response = await axios.get(API_ROUTES.PARKS,{withCredentials: true});
     parks.value = response.data;
   } catch (error) {
     console.error('Error fetching parks:', error);
@@ -84,7 +84,7 @@ const uploadMediaFiles = async () => {
       formData.append('file', file);
 
       try {
-        const response = await axios.post(API_ROUTES.FILES, formData, {
+        const response = await axios.post(API_ROUTES.FILES, formData, {withCredentials: true,
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data; // Assuming the response contains the ID of the uploaded file
@@ -162,7 +162,7 @@ const submitForm = async (event) => {
     const url = API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userId, selectedParkId.value);
 
     // Send the event creation request
-    const response = await axios.post(url, formData);
+    const response = await axios.post(url, formData, {withCredentials: true});
 
     console.log('Event created successfully:', response.data);
 

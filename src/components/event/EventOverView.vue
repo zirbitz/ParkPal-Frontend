@@ -11,7 +11,7 @@ const eventsPerPage = ref(5); // Number of events per page
 // Fetch all events from the backend
 const fetchAllEvents = async () => {
   try {
-    const response = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS());
+    const response = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(), {withCredentials: true});
     if (Array.isArray(response.data)) {
       events.value = response.data;
     } else {

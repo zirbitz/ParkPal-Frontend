@@ -57,8 +57,7 @@ const fetchUserProfileAndEvents = async () => {
       profilePictureUrl.value = user.value.profilePictureId ?? null;
 
       //TODO:route does not work, wait for fix in the backend
-      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id.value), {
-      });
+      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id.value), {withCredentials: true});
 
       if (eventsResponse && eventsResponse.data && Array.isArray(eventsResponse.data)) {
         events.value = eventsResponse.data;
@@ -86,7 +85,7 @@ const goToEventPage = (page) => {
 const deleteEvent = async (index) => {
   try {
     const event = paginatedEvents.value[index];
-    await axios.delete(`http://localhost:8080/events/${event.id}`); // Assuming DELETE API exists
+    await axios.delete(`http://localhost:8080/events/${event.id}`, {withCredentials: true});
     events.value = events.value.filter(e => e.id !== event.id); // Remove event from list
   } catch (error) {
     console.error("Error deleting event:", error);
