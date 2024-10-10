@@ -4,8 +4,8 @@ import axios from 'axios';
 import CountryService from "@/service/countryService.js";
 import { fetchUserData } from "@/service/authService.js";
 import { API_ROUTES } from "@/apiRoutes.js";
+import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
-import router from "@/router.js"; // Assuming EventCard component exists
 
 // Profile Data
 const user = ref(null);
@@ -20,9 +20,12 @@ const countries = ref([]);
 const salutation = ref('');
 const gender = ref('');
 const profilePictureId = ref('');
-const profilePictureUrl = ref('');
+const profilePictureUrl = ref(''); // To store profile picture URL or uploaded picture
+const profilePictureError = ref('');
 const showFlashMessage = ref(false);
 const flashMessageText = ref('');
+const selectedProfilePictureFile = ref(null); // Store the selected file temporarily
+const fileInputRef = ref(null); // Ref for file input
 
 // Events Data
 const events = ref([]);
@@ -54,16 +57,32 @@ const fetchUserProfileAndEvents = async () => {
       email.value = user.value.email;
       username.value = user.value.userName;
       country.value = user.value.countryId;
-      profilePictureUrl.value = user.value.profilePictureId ?? null;
+      profilePictureId.value = user.value.profilePictureId ?? null;
 
-      //TODO:route does not work, wait for fix in the backend
-      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id.value), {withCredentials: true});
+      // Fetch the profile picture by external ID
+      if (profilePictureId.value) {
+        try {
+          const profilePictureResponse = await axios.get(API_ROUTES.FILES_BY_EXTERNAL_ID(profilePictureId.value), {
+            responseType: 'blob', // Ensures it's treated as binary data
+            withCredentials: true
+          });
 
+          // Convert the blob to an object URL for display
+          const imageUrl = URL.createObjectURL(profilePictureResponse.data);
+          profilePictureUrl.value = imageUrl;
+
+        } catch (error) {
+          profilePictureError.value = 'Error fetching profile picture';
+          console.error("Error fetching profile picture:", error);
+        }
+      }
+
+      // Fetch the user's events
+      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id), { withCredentials: true });
       if (eventsResponse && eventsResponse.data && Array.isArray(eventsResponse.data)) {
         events.value = eventsResponse.data;
-        console.log("Events fetched successfully:", events.value); // Debugging
       } else {
-        console.error("No events found in the response or the response is not in the expected format.");
+        console.error("No events found or unexpected format.");
       }
     }
   } catch (error) {
@@ -85,7 +104,7 @@ const goToEventPage = (page) => {
 const deleteEvent = async (index) => {
   try {
     const event = paginatedEvents.value[index];
-    await axios.delete(`http://localhost:8080/events/${event.id}`, {withCredentials: true});
+    await axios.delete(`http://localhost:8080/events/${event.id}`, { withCredentials: true });
     events.value = events.value.filter(e => e.id !== event.id); // Remove event from list
   } catch (error) {
     console.error("Error deleting event:", error);
@@ -95,13 +114,33 @@ const deleteEvent = async (index) => {
 // Update event function
 const updateEvent = (index) => {
   const event = paginatedEvents.value[index];
-  // For example:
   router.push(`/editevent/${event.id}`); // Assuming you have a route to edit the event
 };
 
-// Update profile
+// Update profile (including profile picture upload if applicable)
 const updateProfile = async () => {
   try {
+    let newProfilePictureId = profilePictureId.value;
+
+    // If a new profile picture is selected, upload it
+    if (selectedProfilePictureFile.value) {
+      const formData = new FormData();
+      formData.append("file", selectedProfilePictureFile.value);
+      const uploadResponse = await axios.post(API_ROUTES.MINIO, formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (uploadResponse.status === 200) {
+        newProfilePictureId = uploadResponse.data; // Store the new external ID
+        profilePictureError.value = '';
+      } else {
+        profilePictureError.value = 'Failed to upload profile picture';
+      }
+    }
+
     const formData = {
       firstName: firstName.value,
       lastName: lastName.value,
@@ -111,13 +150,13 @@ const updateProfile = async () => {
       userName: username.value,
       id: userid.value,
       countryId: country.value,
+      profilePictureId: newProfilePictureId, // Use the new profile picture ID, if uploaded
     };
-    if (profilePictureId.value) {
-      formData.profilePictureId = profilePictureId.value;
-    }
+
     const response = await axios.put(API_ROUTES.USERS_BY_ID(userid.value), formData, {
       withCredentials: true,
     });
+
     user.value = response.data;
     showFlashMessage.value = true;
     flashMessageText.value = 'Profile updated successfully';
@@ -130,51 +169,48 @@ const updateProfile = async () => {
   }
 };
 
-const deleteUserProfile = async () => {
-  if (confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
-    try {
-      await axios.delete(API_ROUTES.USERS_BY_ID(userid.value), {
-        withCredentials: true,
-      });
-      alert('Profile deleted successfully.');
-      // Redirect or handle post-deletion, e.g., log out the user
-      await router.push("/login");
-    } catch (error) {
-      console.error('Failed to delete profile:', error);
-      alert('Error deleting profile.');
-    }
+// Temporarily store selected file when user selects a new profile picture
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    selectedProfilePictureFile.value = file; // Store the file temporarily
+    profilePictureUrl.value = URL.createObjectURL(file); // Display preview
+  } else {
+    profilePictureError.value = 'No file selected';
   }
 };
 
-// Handle file upload for profile picture
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const response = await axios.post(API_ROUTES.FILES, formData, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      if (response.status === 200) {
-        profilePictureId.value = response.data;
-        profilePictureUrl.value = URL.createObjectURL(file);
-      }
-    } catch (error) {
-      console.error('Failed to upload file:', error);
-    }
+// Delete profile picture
+const resetProfilePicture = async () => {
+  if (!profilePictureId.value) {
+    console.error("No profile picture to delete.");
+    return;
+  }
+
+  try {
+    await axios.delete(`${API_ROUTES.MINIO}/${profilePictureId.value}`, {
+      withCredentials: true,
+    });
+
+    // Clear the profile picture data on the frontend
+    profilePictureId.value = '';
+    profilePictureUrl.value = '';
+    profilePictureError.value = null;
+
+    console.log("Profile picture deleted successfully.");
+  } catch (error) {
+    console.error("Failed to delete profile picture:", error);
+    profilePictureError.value = 'Error deleting profile picture.';
   }
 };
 
 // Fetch countries and user profile on component mount
 onMounted(async () => {
   countries.value = await CountryService.getCountries();
-  fetchUserProfileAndEvents();
+  await fetchUserProfileAndEvents();
 });
 </script>
+
 
 <template>
   <div class="container">
@@ -188,6 +224,23 @@ onMounted(async () => {
         <div class="col-12 col-md-6">
           <h2>User Profile</h2>
           <form @submit.prevent="updateProfile">
+
+            <div class="mb-3">
+              <label for="profilePicture" class="form-label">Profile Picture</label>
+              <div class="mt-3">
+                <!-- Show the profile picture if available -->
+                <div v-if="profilePictureUrl">
+                  <img :src="profilePictureUrl" alt="Profile Picture" class="img-thumbnail" width="150">
+                  <button type="button" class="btn btn-danger mt-2" @click="resetProfilePicture">Delete Picture</button>
+                </div>
+                <!-- Show error message if there's an error fetching the profile picture -->
+                <p v-else-if="profilePictureError" class="text-danger">{{ profilePictureError }}</p>
+                <!-- Show message if no profile picture is available -->
+                <p v-else>No profile picture available.</p>
+              </div>
+              <input type="file" class="form-control" id="profilePicture" @change="handleFileUpload" ref="fileInputRef">
+            </div>
+
             <div class="mb-3">
               <label for="firstName" class="form-label">First Name</label>
               <input type="text" class="form-control" id="firstName" v-model="firstName">
@@ -219,13 +272,6 @@ onMounted(async () => {
               <select class="form-select" id="gender" v-model="gender">
                 <option v-for="option in genderOptions" :key="option" :value="option">{{ option }}</option>
               </select>
-            </div>
-            <div class="mb-3">
-              <label for="profilePicture" class="form-label">Profile Picture</label>
-              <input type="file" class="form-control" id="profilePicture" @change="handleFileUpload">
-              <div v-if="profilePictureUrl" class="mt-3">
-                <img :src="profilePictureUrl" alt="Profile Picture" class="img-thumbnail" width="150">
-              </div>
             </div>
             <div class="col btn-col text-center">
               <button type="submit" class="btn btn-primary">Update Profile</button>
@@ -270,5 +316,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-
+.flash-message {
+  color: green;
+  font-weight: bold;
+}
 </style>

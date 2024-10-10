@@ -20,6 +20,7 @@ export const API_ROUTES = {
     EVENTTAGS_BY_ID: (eventTagId) => `${BASE_URL}/event-tags/${eventTagId}`,
     FILES: buildFilesUrl,
     FILES_BY_EXTERNAL_ID: (externalId) => `${BASE_URL}/files/${externalId}`,
+    MINIO: `${BASE_URL}/files`,
     PARKS: `${BASE_URL}/parks`,
     PARKS_BY_ID: (parkId) => `${BASE_URL}/parks/${parkId}`,
     USERS: `${BASE_URL}/users`,
