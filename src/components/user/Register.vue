@@ -45,8 +45,10 @@ export default {
       zip: '',
       zipValid: false,
       zipDirty: false,
-      userPicture: null,
+      userPicture: null, // For holding the uploaded picture file
+      userPicturePreview: '',  // Picture preview URL
       pictureError: '',
+      uploadedFileId: '', // For holding the returned file ID from MinIO
       terms: false,
       termsValid: false,
       termsDirty: false,
@@ -65,25 +67,70 @@ export default {
     checkPasswordsMatch() {
       this.passwordsMatch = this.password === this.confirmPassword
     },
+    async uploadPictureToMinio() {
+      if (!this.userPicture) {
+        this.pictureError = 'Please upload a picture.';
+        return null;
+      }
+
+      const formData = new FormData();
+      formData.append('file', this.userPicture);
+
+      try {
+        const response = await axios.post(API_ROUTES.MINIO, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          withCredentials: true,
+        });
+
+        console.log(response)
+
+        return response.data;  // Adjust this if your response is different
+      } catch (error) {
+        console.error('Error uploading the picture:', error);
+        this.pictureError = 'Error uploading the picture. Please try again.';
+        return null;
+      }
+    },
     async register() {
       this.validatePassword();
+      console.log('Password Valid:', this.passwordValid);
       if (!this.passwordValid) {
+        console.log('Password validation failed.');
         return;
       }
 
       this.markAllFieldsDirty();
       this.runValidations();
 
+      console.log('All Fields Valid:', this.allFieldsValid());
       if (!this.allFieldsValid()) {
+        console.log('Field validation failed.');
         return;
       }
 
-
-      if (!this.validateUserPicture()) {
+      const userPictureValid = this.validateUserPicture();
+      console.log('User Picture Valid:', userPictureValid);
+      if (!userPictureValid) {
+        console.log('User picture validation failed.');
         return;
       }
 
-      /*Connect to API correctly later*/
+      const uploadedFileID = await this.uploadPictureToMinio();
+      console.log('Received File ID:', uploadedFileID);
+      if (!uploadedFileID) {
+        console.log('File ID is invalid.');
+        return;
+      }
+
+      // Check if passwords match
+      console.log('Passwords Match:', this.passwordsMatch);
+      if (!this.passwordsMatch) {
+        alert('Passwords do not match');
+        return;
+      }
+
       const formData = {
         firstName: this.firstName,
         lastName: this.lastName,
@@ -93,6 +140,7 @@ export default {
         userName: this.username,
         password: this.password,
         countryId: this.country,
+        profilePictureId: uploadedFileID, // Add the file ID to the registration form
       };
 
       for (let [key, value] of Object.entries(formData)) {
@@ -105,14 +153,8 @@ export default {
       }
 
       try {
-
         const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData
         , {withCredentials: true})
-
-        // Registration successful
-        //alert('Registration successful!');
-        // Inside your register method, after successful registration
-        //this.showSuccessMessage = true;
 
         this.showFlashMessage = true
         this.flashMessageText = 'Registration successful'
@@ -121,7 +163,6 @@ export default {
           this.showFlashMessage = false
         }, 3000); // Adjust time as needed
 
-        //this.$router.replace({ name: 'Home' });
         this.resetForm();
       } catch (error) {
         console.error('Fetch error:', error);
@@ -141,7 +182,6 @@ export default {
       this.genderDirty = true;
       this.emailDirty = true;
       this.usernameDirty = true;
-      this.countryDirty = true;
       this.addressDirty = true;
       this.cityDirty = true;
       this.zipDirty = true;
@@ -257,8 +297,22 @@ export default {
           this.dsvgoValid;
     },
     handleFileUpload(event) {
-      this.userPicture = event.target.files[0];
+      this.userPicture = event.target.files[0];  // Get the selected file
       this.pictureError = '';
+
+      // If a file is selected, create a Base64 preview
+      if (this.userPicture) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.userPicturePreview = e.target.result;  // Set the preview URL (Base64)
+        };
+        reader.readAsDataURL(this.userPicture);  // Convert file to Base64 string
+      }
+    },
+    removePicture() {
+      this.userPicture = null;  // Clear the selected file
+      this.userPicturePreview = null;  // Remove the Base64 preview
+      this.$refs.fileInput.value = '';  // Reset the file input element
     },
     resetForm() {
       this.firstName = '';
@@ -279,13 +333,8 @@ export default {
       this.username = '';
       this.usernameValid = false;
       this.usernameDirty = false;
-      this.country = '';
-      this.countryValid = false;
-      this.countryDirty = false;
-      /*
       this.userPicture = null;
       this.pictureError = '';
-       */
       this.terms = false;
       this.termsValid = false;
       this.termsDirty = false;
@@ -318,6 +367,18 @@ export default {
       Registration successful!
     </div>
     <form class="register-form" @submit.prevent="register">
+      <div class="col-md-6">
+        <label for="userPicture" class="form-label">Upload User Picture</label>
+        <input type="file" class="form-control" id="userPicture" accept="image/*" @change="handleFileUpload" ref="fileInput">
+        <div class="invalid-feedback" v-if="pictureError">
+          {{ pictureError }}
+        </div>
+
+        <div v-if="userPicturePreview" class="picture-preview">
+          <img :src="userPicturePreview" class="user-picture" alt="User Picture" width="150" height="150">
+          <button type="button" class="delete-btn btn btn-danger mt-2" @click="removePicture">Delete</button>
+        </div>
+      </div>
       <div class="row g-3 register-row">
         <div class="col-md-5">
           <label for="validationServer01" class="form-label">First name</label>
@@ -393,20 +454,11 @@ export default {
         Passwords do not match.
       </div>
 
-      <!--div class="row g-3 register-row">
-        <div class="col-md-6">
-          <label for="userPicture" class="form-label">Upload User Picture</label>
-          <input type="file" class="form-control" id="userPicture" accept="image/*" @change="handleFileUpload">
-          <div class="invalid-feedback" v-if="pictureError">
-            {{ pictureError }}
-          </div>
-        </div>
-      </div-->
 
       <div class="row g-3 register-row">
         <div class="col-md-4">
           <label for="validationServerCountry" class="form-label">Country</label>
-          <select class="form-select" :class="{'is-invalid': !countryValid && countryDirty, 'is-valid': countryValid && countryDirty}" id="validationServerCountry" v-model="country" >
+          <select class="form-select" id="validationServerCountry" v-model="country">
             <option selected disabled value="">Choose...</option>
             <option v-for="country in countries" :key="country.id" :value="country.id">{{ country.name }}</option>
           </select>
@@ -570,5 +622,22 @@ export default {
     }
 
   }
+}
+.picture-preview {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.user-picture {
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+}
+
+.delete-btn {
+  height: 40px;
+  line-height: 1.2;
 }
 </style>

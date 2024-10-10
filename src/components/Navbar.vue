@@ -57,7 +57,14 @@
 
           <li class="nav-item" v-if="authStatus.isAuthenticated">
             <router-link :to="{ name: 'UserDashboard' }" class="nav-link">
-              <img class="rounded-circle" src="../assets/images/arial.jpg" alt="Profile Picture" width="40" height="40">
+              <img
+                  v-if="profilePictureUrl"
+                  class="rounded-circle"
+                  :src="profilePictureUrl"
+                  alt="Profile Picture"
+                  width="40"
+                  height="40"
+              />
               <span class="user-name-text">User Profile</span>
             </router-link>
           </li>
@@ -69,21 +76,72 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { isAuthenticated, isAdmin } from '@/service/authService';
+import { fetchUserData, isAuthenticated, isAdmin } from '@/service/authService';
+import axios from 'axios';
+import { API_ROUTES } from '@/apiRoutes.js';
 
-
+// Track auth status and profile picture URL
 const authStatus = ref({
   isAuthenticated: false,
-  isAdmin: false
+  isAdmin: false,
 });
 
-async function fetchAuthStatus() {
-  authStatus.value.isAuthenticated = await isAuthenticated();
-  if (authStatus.value.isAuthenticated) {
-    authStatus.value.isAdmin = await isAdmin();
+const profilePictureUrl = ref(null);
+
+// Function to fetch user data by userId
+async function fetchUserById(userId) {
+  try {
+    const response = await axios.get(`${API_ROUTES.USERS}/${userId}`, { withCredentials: true });
+    return response.data; // Assuming the response contains the user data (UserDto)
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    return null;
   }
 }
 
+// Function to fetch auth status and user details
+async function fetchAuthStatus() {
+  // Check if the user is authenticated
+  authStatus.value.isAuthenticated = await isAuthenticated();
+
+  if (authStatus.value.isAuthenticated) {
+    // Check if the user is an admin
+    authStatus.value.isAdmin = await isAdmin();
+
+    try {
+      // Fetch user data (which includes userId)
+      const userData = await fetchUserData(); // fetchUserData must return the user details
+      const userId = userData?.id;
+
+      if (userId) {
+        // Fetch full user data by userId
+        const fullUserData = await fetchUserById(userId);
+
+        // Check if the profilePictureId exists and fetch the profile picture
+        if (fullUserData && fullUserData.profilePictureId) {
+          const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${fullUserData.profilePictureId}`, {
+            responseType: 'blob', // Ensuring the response is a binary blob
+            withCredentials: true, // Include credentials if needed (cookies or auth headers)
+          });
+
+          // Create a URL for the profile picture blob
+          const imageUrl = URL.createObjectURL(pictureResponse.data);
+
+          // Update the profile picture URL in the component's state
+          profilePictureUrl.value = imageUrl;
+        } else {
+          // Fallback to default profile picture if no profilePictureId is found
+          profilePictureUrl.value = '/src/assets/images/default-profile.png';
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user or profile picture:', error);
+      profilePictureUrl.value = '/src/assets/images/default-profile.png';
+    }
+  }
+}
+
+// Hook to call the fetchAuthStatus function when the component is mounted
 onMounted(() => {
   fetchAuthStatus();
 });
@@ -147,7 +205,6 @@ onMounted(() => {
   }
 }
 
-
 @media (max-width: 992px) {
   .user-name-text {
     display:none;
@@ -173,4 +230,3 @@ onMounted(() => {
   }
 }
 </style>
-
