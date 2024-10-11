@@ -84,7 +84,7 @@ const uploadMediaFiles = async () => {
       formData.append('file', file);
 
       try {
-        const response = await axios.post(API_ROUTES.FILES, formData, {withCredentials: true,
+        const response = await axios.post(API_ROUTES.MINIO, formData, {withCredentials: true,
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data; // Assuming the response contains the ID of the uploaded file
@@ -147,18 +147,21 @@ const submitForm = async (event) => {
       return; // Exit early if no userId is found
     }
 
+    const startTS = `${document.getElementById('startDate').value}T${document.getElementById('startTime').value}`;
+    const endTS = `${document.getElementById('endDate').value}T${document.getElementById('endTime').value}`;
+
     // Prepare the data to match CreateEventDto
     const formData = {
       title: document.getElementById('title').value,
       description: document.getElementById('description').value,
-      startTS: document.getElementById('startTime').value, // should be a datetime-local field
-      endTS: document.getElementById('lastTime').value, // should be a datetime-local field
+      startTS,
+      endTS,
       parkId: selectedParkId.value,
-      creatorUserId: userId, // Ensure this has the correct userId from the backend
-      createMediaFileIds: createMediaFileIds.value, // IDs of uploaded media files
+      creatorUserId: userId,
+      mediaFileExternalIds: createMediaFileIds.value,
     };
 
-    // Build url
+
     const url = API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userId, selectedParkId.value);
 
     // Send the event creation request
@@ -179,8 +182,6 @@ const submitForm = async (event) => {
 
 </script>
 
-
-
 <template>
   <div class="container mt-4">
     <h1 class="text-center">Create Event</h1>
@@ -195,12 +196,20 @@ const submitForm = async (event) => {
         <textarea class="form-control" id="description" rows="3" required></textarea>
       </div>
       <div class="mb-3">
-        <label for="startTime" class="form-label">Start Time</label>
-        <input type="datetime-local" class="form-control" id="startTime" required>
+        <label for="startDate" class="form-label">Start Date</label>
+        <input type="date" class="form-control" id="startDate" required>
       </div>
       <div class="mb-3">
-        <label for="lastTime" class="form-label">Last Time</label>
-        <input type="datetime-local" class="form-control" id="lastTime" required>
+        <label for="startTime" class="form-label">Start Time</label>
+        <input type="time" class="form-control" id="startTime" required>
+      </div>
+      <div class="mb-3">
+        <label for="endDate" class="form-label">End Date</label>
+        <input type="date" class="form-control" id="endDate" required>
+      </div>
+      <div class="mb-3">
+        <label for="endTime" class="form-label">End Time</label>
+        <input type="time" class="form-control" id="endTime" required>
       </div>
       <div class="mb-3">
         <label for="park" class="form-label">Select Park</label>
