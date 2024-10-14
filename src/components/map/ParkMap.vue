@@ -10,7 +10,7 @@ import axios from 'axios';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const parks = ref([]); // Holds the parks data
+const parks = ref([]);
 const map = ref(null);
 
 // Fetch parks data along with events
