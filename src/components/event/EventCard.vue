@@ -1,93 +1,80 @@
 <template>
-  <div>
-    <!-- Loop through the events prop -->
-    <div v-for="event in events" :key="event.id" class="card">
-      <ul class="list-group list-group-flush">
-        <!-- Event Image and Tags -->
-        <li class="list-group-item">
-          <!-- Event Tags -->
-          <span v-if="event?.eventTagNames?.length">
-            <span v-for="(tagName, index) in event.eventTagNames" :key="index">
-              {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
-            </span>
+  <div class="card">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        <span v-if="event?.eventTagNames?.length">
+          <span v-for="(tagName, index) in event.eventTagNames" :key="index">
+            {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
           </span>
-
-          <!-- Event Image with Placeholder -->
-          <a :href="`events/${event.id}.html`">
-            <img class="event-images"
-                :src="event.imageUrl || 'path_to_default_event_image.jpg'"
-                :alt="event.title || 'Event image'"
-                @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
-            />
-          </a>
+        </span>
+        <a :href="`events/${event.id}.html`">
+          <img class="event-images"
+               :src="event.imageUrl || 'path_to_default_event_image.jpg'"
+               :alt="event.title || 'Event image'"
+               @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
+          />
+        </a>
+      </li>
+    </ul>
+    <div class="card-body">
+      <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
+      <h6 class="card-text">
+        <a :href="`park/${event.parkId}.html`">Park</a>
+      </h6>
+      <p class="card-text">{{ event.description || 'No description available' }}</p>
+      <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
+      <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
+      <p class="card-text"><strong>Creator:</strong>
+        <a :href="`user/${event.creatorUserId}.html`">{{ event.creatorName || 'Unknown' }}</a>
+      </p>
+      <p class="card-text"><strong>Joined Users:</strong></p>
+      <ul>
+        <li v-for="username in event.joinedUserNames || []" :key="username">
+          <a>{{ username }}</a>
         </li>
       </ul>
-
-      <!-- Event Body Content -->
-      <div class="card-body">
-        <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
-        <h6 class="card-text">
-          <a :href="`park/${event.parkId}.html`">Park</a>
-        </h6>
-        <p class="card-text">{{ event.description || 'No description available' }}</p>
-        <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-        <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
-        <p class="card-text"><strong>Creator:</strong>
-          <a :href="`user/${event.creatorUserId}.html`">{{ event.creatorName || 'Unknown' }}</a>
-        </p>
-
-        <p class="card-text"><strong>Joined Users:</strong></p>
-
-        <!-- List of Joined Users -->
-        <ul>
-          <li v-for="(userId, index) in event.joinedUserIds || []" :key="index">
-            <a :href="`user/${userId}.html`">User {{ index + 1 }}</a>
-          </li>
-        </ul>
-
-        <a href="#" class="btn btn-primary">Join</a>
-        <button v-if="isCreator(event)" @click="editEvent(event.id)" class="btn btn-secondary ms-2">Edit</button>
-      </div>
-
-      <!-- Event Creator Image with Placeholder -->
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item">
-          <a :href="`user/${event.creatorUserId}.html`">
-            <img
-                class="creator-image"
-                :src="event.userPicture || 'path_to_default_user_image.jpg'"
-                alt="User picture"
-                @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
-            />
-          </a>
-        </li>
-      </ul>
-
-      <!-- Event Tags (Additional) -->
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item">
-          <h6>Event Tags:</h6>
-          <p v-if="event?.eventTagNames?.length">
-            <span v-for="(tagName, index) in event.eventTagNames" :key="index">
-              {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
-            </span>
-          </p>
-          <p v-else>No tags available</p>
-        </li>
-      </ul>
+      <a href="#" class="btn btn-primary" @click.prevent="toggleJoin(event)">
+        {{ isUserJoined(event) ? 'Unjoin' : 'Join' }}
+      </a>
+      <button v-if="isCreator(event)" @click="editEvent(event.id)" class="btn btn-secondary ms-2">Edit</button>
     </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        <a :href="`user/${event.creatorUserId}.html`">
+          <img
+              class="creator-image"
+              :src="event.userPicture || 'path_to_default_user_image.jpg'"
+              alt="User picture"
+              @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
+          />
+        </a>
+      </li>
+    </ul>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        <h6>Event Tags:</h6>
+        <p v-if="event?.eventTagNames?.length">
+          <span v-for="(tagName, index) in event.eventTagNames" :key="index">
+            {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
+          </span>
+        </p>
+        <p v-else>No tags available</p>
+      </li>
+    </ul>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { fetchUserData } from '@/service/authService.js';
+import {onMounted, ref} from 'vue';
+import {fetchUserData} from '@/service/authService.js';
+import {useRouter} from "vue-router";
+import axios from "axios";
+import {API_ROUTES} from "@/apiRoutes.js";
 
 // Accept events as a prop
 const props = defineProps({
-  events: {
-    type: Array,
+  event: {
+    type: Object,
     required: true
   }
 });
@@ -106,12 +93,51 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString(undefined, options);
 };
 
+// Define emits
+const emit = defineEmits(['updateEvent']);
+
 // Reactive property to store the user ID
 const userId = ref(null);
 
 // Function to check if the current user is the creator of the event
 const isCreator = (event) => {
   return userId.value && String(userId.value) === String(event.creatorUserId);
+};
+
+const isUserJoined = (event) => {
+  return event.joinedUserIds?.includes(userId.value);
+};
+
+const toggleJoin = async (event, e) => {
+  try {
+    const isJoining = !isUserJoined(event);
+    const updatedJoinedUserIds = isJoining
+        ? [...event.joinedUserIds, userId.value]
+        : event.joinedUserIds.filter(id => id !== userId.value);
+
+    const response = await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.id, isJoining)
+        , null
+        , { withCredentials: true });
+
+    const joinedUserNames = Array.isArray(response.data) ? response.data : [];
+
+    const updatedEvent = {
+      ...event,
+      joinedUserIds: updatedJoinedUserIds,
+      joinedUserNames: joinedUserNames,
+    };
+
+    // Update the local event data to reflect the change
+    event.joinedUserIds = updatedJoinedUserIds;
+    event.joinedUserNames = joinedUserNames;
+
+    console.log('Updated event:', updatedEvent); // Check the updated event data
+
+    // Emit the updateEvent event to the parent component
+    emit('updateEvent', updatedEvent);
+  } catch (error) {
+    console.error('Error updating event:', error);
+  }
 };
 
 // Fetch user data on component mount
