@@ -5,10 +5,18 @@
     <div v-else-if="error">{{ error }}</div>
     <div class="user-list">
       <div v-for="user in users" :key="user.id" class="user-card">
+        <!-- Display the user profile picture if available -->
         <img
             v-if="user.profilePictureUrl"
             :src="user.profilePictureUrl"
             alt="User Profile Picture"
+            class="profile-picture"
+        />
+        <!-- Otherwise, display the placeholder image -->
+        <img
+            v-else
+            src="/src/assets/images/default-profile.png"
+            alt="Default Profile Picture"
             class="profile-picture"
         />
         <div class="username">{{ user.userName }}</div>
@@ -18,9 +26,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted} from 'vue';
 import axios from 'axios';
-import { API_ROUTES } from '@/apiRoutes.js'; // Ensure this file has the correct routes
+import {API_ROUTES} from '@/apiRoutes.js'; // Ensure this file has the correct routes
 
 const users = ref([]);        // Array to hold users data
 const loading = ref(true);     // Loading state
@@ -47,19 +55,19 @@ async function fetchUsers() {
 
 // Function to fetch the user profile picture
 async function fetchUserProfilePicture(profilePictureId) {
-  if (!profilePictureId) return '/src/assets/images/default-profile.png'; // Fallback URL
+  if (!profilePictureId) return null; // No profile picture available
 
   try {
-    const pictureResponse = await axios.get(`${API_ROUTES.FILES}/${profilePictureId}`, {
-      responseType: 'blob', // Ensuring the response is a binary blob
-      withCredentials: true, // Include credentials if needed (cookies or auth headers)
+    const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${profilePictureId}`, {
+      responseType: 'blob',
+      withCredentials: true,
     });
 
     // Create a URL for the profile picture blob
     return URL.createObjectURL(pictureResponse.data);
   } catch (error) {
     console.error('Error fetching profile picture:', error);
-    return '/src/assets/images/default-profile.png'; // Fallback URL in case of error
+    return null; // Return null in case of error
   }
 }
 
@@ -83,9 +91,10 @@ onMounted(fetchUsers);
 }
 
 .profile-picture {
-  width: 100%;
-  height: auto;
+  width: 100px;   /* Set specific size */
+  height: 100px;  /* Set specific size */
   border-radius: 50%; /* Make the profile picture circular */
+  object-fit: cover; /* Ensures the image is cropped to fit within the circle */
 }
 
 .username {
