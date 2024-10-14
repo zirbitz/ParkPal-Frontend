@@ -95,6 +95,36 @@ const nextEventPage = () => {
 const goToEventPage = (page) => {
   eventPage.value = page;
 };
+const lockUser = async (index) => {
+  try {
+    const user = paginatedUsers.value[index];
+    await axios.post(`http://localhost:8080/admins/${user.id}/status`, null, {
+      params: { locked: !user.locked }, // Toggle lock status
+      withCredentials: true,
+    });
+    // Option 1: Update the specific user directly
+    paginatedUsers.value[index].locked = !user.locked;
+    console.log("User locked status toggled successfully");
+  } catch (error) {
+    console.error("Error locking user:", error);
+  }
+};
+
+const toggleUserRole = async (index) => {
+  try {
+    const user = paginatedUsers.value[index];
+    const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
+    await axios.post(`http://localhost:8080/admins/${user.id}/status`, null, {
+      params: { role: newRole },
+      withCredentials: true,
+    });
+    // Option 2: Update user role directly
+    paginatedUsers.value[index].role = newRole;
+    console.log("User role updated successfully");
+  } catch (error) {
+    console.error("Error updating user role:", error);
+  }
+};
 
 // Delete user function
 const deleteUser = async (index) => {
@@ -252,6 +282,12 @@ onMounted(() => {
                 <td><a :href="'mailto:' + user.email" target="_blank">{{ user.email }}</a></td>
                 <td>
                   <button class="btn btn-danger btn-sm" @click="deleteUser(index)">Delete</button>
+                  <button class="btn btn-warning btn-sm ms-2" @click="lockUser(index)">
+                    {{ user.locked ? 'Unlock' : 'Lock' }}
+                  </button>
+                  <button class="btn btn-secondary btn-sm ms-2" @click="toggleUserRole(index)">
+                    {{ user.role === 'ADMIN' ? 'Change to User' : 'Change to Admin' }}
+                  </button>
                 </td>
               </tr>
               </tbody>
