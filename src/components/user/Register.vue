@@ -2,10 +2,16 @@
 import CountryService from "@/service/countryService.js";
 import axios from "axios";
 import {API_ROUTES} from "@/apiRoutes.js";
+import CAPTCHAPuzzle from "@/components/CAPTCHAPuzzle.vue";
 
 export default {
+  components: {
+    CAPTCHAPuzzle
+  },
   data() {
     return {
+      captchaValid: false,
+      captchaDirty: false,
       genderOptions: ['FEMALE', 'MALE', 'OTHER'],
       firstName: '',
       lastName: '',
@@ -64,6 +70,10 @@ export default {
     this.countries = await CountryService.getCountries(); // Fetch countries on component creation
   },
   methods: {
+    handleCaptchaCompleted() {
+      this.captchaValid = true;
+      this.captchaDirty = true;
+    },
     checkPasswordsMatch() {
       this.passwordsMatch = this.password === this.confirmPassword
     },
@@ -95,14 +105,19 @@ export default {
     },
     async register() {
       this.validatePassword();
+      this.markAllFieldsDirty();
+      this.runValidations();
       console.log('Password Valid:', this.passwordValid);
       if (!this.passwordValid) {
         console.log('Password validation failed.');
         return;
       }
 
-      this.markAllFieldsDirty();
-      this.runValidations();
+      if (!this.captchaValid) {
+        this.captchaDirty = true;
+        console.log('CAPTCHA validation failed.');
+        return;
+      }
 
       console.log('All Fields Valid:', this.allFieldsValid());
       if (!this.allFieldsValid()) {
@@ -140,7 +155,7 @@ export default {
         userName: this.username,
         password: this.password,
         countryId: this.country,
-        profilePictureId: uploadedFileID, // Add the file ID to the registration form
+        profilePictureId: uploadedFileID,
       };
 
       for (let [key, value] of Object.entries(formData)) {
@@ -187,6 +202,7 @@ export default {
       this.zipDirty = true;
       this.termsDirty = true;
       this.dsvgoDirty = true;
+      this.captchaDirty = true;
     },
     runValidations() {
       this.validateFirstName();
@@ -294,7 +310,8 @@ export default {
           this.emailValid &&
           this.usernameValid &&
           this.termsValid &&
-          this.dsvgoValid;
+          this.dsvgoValid &&
+          this.captchaValid;
     },
     handleFileUpload(event) {
       this.userPicture = event.target.files[0];  // Get the selected file
@@ -369,7 +386,7 @@ export default {
     <form class="register-form" @submit.prevent="register">
       <div class="col-md-6">
         <label for="userPicture" class="form-label">Upload User Picture</label>
-        <input type="file" class="form-control" id="userPicture" accept="image/*" @change="handleFileUpload" ref="fileInput">
+        <input type="file" class="form-control" id="userPicture"  accept=".jpg, .png, .gif" @change="handleFileUpload" ref="fileInput">
         <div class="invalid-feedback" v-if="pictureError">
           {{ pictureError }}
         </div>
@@ -520,6 +537,18 @@ export default {
             </div>
           </div>
         </div>
+        <!-- CAPTCHA Puzzle -->
+        <div class="col-md-6 mt-4">
+          <label for="captcha" class="form-label">Solve the CAPTCHA:</label>
+          <CAPTCHAPuzzle @captcha-solved="handleCaptchaCompleted" />
+          <div v-if="!captchaValid && captchaDirty" class="invalid-feedback">
+            Please complete the CAPTCHA.
+          </div>
+        </div>
+
+        <div v-if="captchaValid" class="captcha-feedback success">CAPTCHA Solved!</div>
+        <div v-if="!captchaValid && captchaDirty" class="captcha-feedback error">Please solve the CAPTCHA to continue.</div>
+
       </div>
 
       <div class="col mt-5 sign-in-redirect">
@@ -639,5 +668,14 @@ export default {
 .delete-btn {
   height: 40px;
   line-height: 1.2;
+}
+
+.captcha-feedback.success{
+  font-weight: bold;
+  text-align: center;
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
 }
 </style>
