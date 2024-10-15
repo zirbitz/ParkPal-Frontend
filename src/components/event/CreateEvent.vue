@@ -241,6 +241,7 @@ const submitForm = async (event) => {
               class="form-control"
               id="eventMedia"
               multiple
+              accept=".jpg, .png, .gif"
               @change="handleFileSelection"
           >
           <button class="btn btn-outline-secondary" type="button" @click="removeAllMediaFiles">

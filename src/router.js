@@ -18,6 +18,7 @@ import PictureViewer from "@/components/PictureViewer.vue";
 import UpdateEvent from '@/components/event/EditEvent.vue';
 import CreatePark from "@/components/park/CreatePark.vue";
 import EditPark from "@/components/park/EditPark.vue";
+import PublicUserProfile from "@/components/user/PublicUserProfile.vue";
 
 
 // Routes configuration
@@ -111,6 +112,12 @@ const routes = [
         component: UpdateEvent,
         props: true,
         meta: { requiresAuth: true },
+    },
+    {
+        path: '/userprofile/:userId',
+        name: 'PublicUserProfile',
+        component: PublicUserProfile,
+        props: true,
     }
 ];
 
