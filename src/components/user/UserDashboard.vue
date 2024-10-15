@@ -238,7 +238,7 @@ onMounted(async () => {
                 <!-- Show message if no profile picture is available -->
                 <p v-else>No profile picture available.</p>
               </div>
-              <input type="file" class="form-control" id="profilePicture" @change="handleFileUpload" ref="fileInputRef">
+              <input type="file" class="form-control" id="profilePicture" accept=".jpg, .png, .gif" @change="handleFileUpload" ref="fileInputRef">
             </div>
 
             <div class="mb-3">

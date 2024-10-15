@@ -25,22 +25,24 @@
       <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
       <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
       <p class="card-text"><strong>Creator:</strong>
-        <a :href="`user/${event.creatorUserId}.html`">{{ event.creatorName || 'Unknown' }}</a>
+        <!-- Link to the creator's public profile -->
+        <a :href="`/userprofile/${event.creatorUserId}`">{{ event.creatorName || 'Unknown' }}</a>
       </p>
       <p class="card-text"><strong>Joined Users:</strong></p>
-      <ul>
-        <li v-for="username in event.joinedUserNames || []" :key="username">
-          <a>{{ username }}</a>
+      <ul class="text-center">
+        <!-- Iterate through joined usernames and IDs to create links -->
+        <li v-for="(username, index) in event.joinedUserNames || []" :key="username">
+          <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
         </li>
       </ul>
-      <a href="#" class="btn btn-primary" @click.prevent="toggleJoin(event)">
+      <a href="#" class="btn btn-primary text-center" @click.prevent="toggleJoin(event)">
         {{ isUserJoined(event) ? 'Unjoin' : 'Join' }}
       </a>
       <button v-if="isCreator(event)" @click="editEvent(event.id)" class="btn btn-secondary ms-2">Edit</button>
     </div>
     <ul class="list-group list-group-flush">
       <li class="list-group-item">
-        <a :href="`user/${event.creatorUserId}.html`">
+        <a :href="`/userprofile/${event.creatorUserId}`">
           <img
               class="creator-image"
               :src="event.userPicture || 'path_to_default_user_image.jpg'"
@@ -220,5 +222,15 @@ onMounted(async () => {
     max-width: 150px;
     min-width: 80px;
   }
+}
+
+li {
+  list-style: none;
+}
+
+.user-icon {
+  margin-right: 8px;
+  width: 24px;
+  height: 24px;
 }
 </style>
