@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue';
+import {onMounted, ref} from 'vue';
 import axios from 'axios';
 import {API_ROUTES} from '@/apiRoutes.js'; // Ensure this file has the correct routes
 
@@ -37,7 +37,7 @@ const error = ref(null);       // Error state
 // Function to fetch all users
 async function fetchUsers() {
   try {
-    const response = await axios.get(API_ROUTES.USERS, {withCredentials: true});
+    const response = await axios.get(API_ROUTES.USERS);
     const fetchedUsers = response.data;
 
     // Fetch profile pictures for each user
@@ -60,7 +60,6 @@ async function fetchUserProfilePicture(profilePictureId) {
   try {
     const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${profilePictureId}`, {
       responseType: 'blob',
-      withCredentials: true,
     });
 
     // Create a URL for the profile picture blob

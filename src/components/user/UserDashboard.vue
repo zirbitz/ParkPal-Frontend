@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import axios from 'axios';
 import CountryService from "@/service/countryService.js";
-import { fetchUserData } from "@/service/authService.js";
-import { API_ROUTES } from "@/apiRoutes.js";
+import {fetchUserData} from "@/service/authService.js";
+import {API_ROUTES} from "@/apiRoutes.js";
 import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
 
@@ -104,7 +104,7 @@ const goToEventPage = (page) => {
 const deleteEvent = async (index) => {
   try {
     const event = paginatedEvents.value[index];
-    await axios.delete(`http://localhost:8080/events/${event.id}`, { withCredentials: true });
+    await axios.delete(`http://localhost:8080/events/${event.id}`);
     events.value = events.value.filter(e => e.id !== event.id); // Remove event from list
   } catch (error) {
     console.error("Error deleting event:", error);
@@ -287,7 +287,7 @@ onMounted(async () => {
         <h2>My Events</h2>
         <div v-if="events.length > 0" class="row row-cols-1 row-cols-md-2 g-4 mt-2">
           <div v-for="(event, index) in paginatedEvents" :key="event.id" class="event-card col">
-            <EventCard :events="[event]" />
+            <EventCard :event="event" />
             <div class="d-flex justify-content-between mt-3 mb-3">
               <button class="btn btn-tertiary" @click="updateEvent(index)">Edit</button>
               <button class="btn btn-primary" @click="deleteEvent(index)">Delete</button>

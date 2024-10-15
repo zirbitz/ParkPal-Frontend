@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import {onMounted, ref} from 'vue';
 import axios from 'axios';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -16,7 +16,7 @@ const map = ref(null);
 // Fetch parks data along with events
 const fetchParks = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/parks', { withCredentials: true });
+    const response = await axios.get('http://localhost:8080/parks');
     parks.value = response.data;
 
     // Geocode parks and fetch events for each park
@@ -38,7 +38,6 @@ const fetchEventsByPark = async (parkId) => {
   try {
     const response = await axios.get('http://localhost:8080/events', {
       params: { parkId },
-      withCredentials: true,
     });
     return response.data;
   } catch (error) {

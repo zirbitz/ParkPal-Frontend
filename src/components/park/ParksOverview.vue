@@ -3,6 +3,7 @@ import {computed, onMounted, ref} from 'vue';
 import ParkCard from "@/components/park/ParkCard.vue";
 import ParkInfo from "@/components/park/ParkInfo.vue";
 import {API_ROUTES} from "@/apiRoutes.js";
+import axios from "axios";
 
 // Refs for parks, selected park, and search query
 const parks = ref([]);
@@ -12,10 +13,10 @@ const searchQuery = ref('');  // Make sure searchQuery is a ref
 // Fetch parks from backend
 const fetchParks = async () => {
   try {
-    const response = await fetch(API_ROUTES.PARKS, { credentials: 'include' });
+    const response = await axios.get(API_ROUTES.PARKS);
     console.log(response)
-    if (response.ok) {
-      const data = await response.json();
+    if (response.status === 200) {
+      const data = await response.data;
       parks.value = data;
       console.log(data)
     } else {
