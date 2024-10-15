@@ -1,9 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import {onMounted, ref} from 'vue';
 import axios from 'axios';
-import { fetchUserData } from "@/service/authService.js";
-import { useRouter } from 'vue-router';
-import { API_ROUTES } from "@/apiRoutes.js"; // Import useRouter
+import {fetchUserData} from "@/service/authService.js";
+import {useRouter} from 'vue-router';
+import {API_ROUTES} from "@/apiRoutes.js"; // Import useRouter
 
 const router = useRouter(); // Initialize router
 
@@ -32,7 +32,9 @@ const formData = ref({
   endTS: '',
   parkId: '',
   creatorUserId: '',
-  updateMediaFileIds: []
+  updateMediaFileIds: [],
+  joinedUserIds: [],
+  joinedUserNames: []
 });
 
 // Fetch event data to populate the form
@@ -48,6 +50,8 @@ const fetchEventData = async () => {
       endTS: event.endTS,
       parkId: event.parkId,
       creatorUserId: event.creatorUserId,
+      joinedUserIds: event.joinedUserIds,
+      joinedUserNames: event.joinedUserNames,
       updateMediaFileIds: event.mediaFileIds
     };
     selectedParkId.value = event.parkId;
@@ -211,6 +215,7 @@ const submitForm = async (event) => {
       creatorUserId: formData.value.creatorUserId,
       creatorName: formData.value.creatorName,
       joinedUserIds: formData.value.joinedUserIds || [],
+      joinedUserNames: formData.value.joinedUserNames || [],
       mediaFileIds: updateMediaFileIds.value.length ? updateMediaFileIds.value : formData.value.updateMediaFileIds || [],
       eventTagsIds: Array.from(selectedTags.value),
       eventTagNames: [], // Add names here if applicable

@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import axios from 'axios';
 import {fetchUserData} from "@/service/authService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -11,6 +11,25 @@ const createMediaFileIds = ref([]); // To store the IDs of uploaded media files
 const parks = ref([]); // Store the list of parks
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
+// Calculate start date and time (1 hour from now)
+// Get the current date and time
+const now = new Date();
+
+const startDate = ref(now.toISOString().split('T')[0]);
+const startTime = ref(new Date(now.getTime() + 60 * 60 * 1000).toISOString().split('T')[1].substring(0, 5));
+
+// Calculate end date and time (2 hours from now)
+const endDateTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+const endDate = ref(endDateTime.toISOString().split('T')[0]);
+const endTime = ref(endDateTime.toISOString().split('T')[1].substring(0, 5));
+
+// Construct startTS using reactive properties
+// Construct startTS and endTS using reactive properties
+const startTS = computed(() => `${startDate.value}T${startTime.value}`);
+const endTS = computed(() => `${endDate.value}T${endTime.value}`);
+
+const title = ref('');
+const description = ref('');
 
 // Fetch parks from the API on component mount
 onMounted(async () => {
@@ -147,27 +166,24 @@ const submitForm = async (event) => {
       return; // Exit early if no userId is found
     }
 
-    const startTS = `${document.getElementById('startDate').value}T${document.getElementById('startTime').value}`;
-    const endTS = `${document.getElementById('endDate').value}T${document.getElementById('endTime').value}`;
 
     // Prepare the data to match CreateEventDto
     const formData = {
-      title: document.getElementById('title').value,
-      description: document.getElementById('description').value,
-      startTS,
-      endTS,
+      title: title.value,
+      description: description.value,
+      startTS: startTS.value,
+      endTS: endTS.value,
       parkId: selectedParkId.value,
       creatorUserId: userId,
       mediaFileExternalIds: createMediaFileIds.value,
     };
-
 
     const url = API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userId, selectedParkId.value);
 
     // Send the event creation request
     const response = await axios.post(url, formData, {withCredentials: true});
 
-    console.log('Event created successfully:', response.data);
+    //console.log('Event created successfully:', response.data);
 
     // Show the success popup and hide it after 3 seconds
     showSuccessPopup.value = true;
@@ -189,27 +205,27 @@ const submitForm = async (event) => {
     <form id="editEventForm" @submit.prevent="submitForm">
     <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
-        <input type="text" class="form-control" id="title" required>
+        <input type="text" class="form-control" id="title" v-model="title" required>
       </div>
       <div class="mb-3">
         <label for="description" class="form-label">Event Description</label>
-        <textarea class="form-control" id="description" rows="3" required></textarea>
+        <textarea class="form-control" id="description" v-model="description" rows="3" required></textarea>
       </div>
       <div class="mb-3">
         <label for="startDate" class="form-label">Start Date</label>
-        <input type="date" class="form-control" id="startDate" required>
+        <input type="date" class="form-control" id="startDate" v-model="startDate" required>
       </div>
       <div class="mb-3">
         <label for="startTime" class="form-label">Start Time</label>
-        <input type="time" class="form-control" id="startTime" required>
+        <input type="time" class="form-control" id="startTime" v-model="startTime" required>
       </div>
       <div class="mb-3">
         <label for="endDate" class="form-label">End Date</label>
-        <input type="date" class="form-control" id="endDate" required>
+        <input type="date" class="form-control" id="endDate" v-model="endDate" required>
       </div>
       <div class="mb-3">
         <label for="endTime" class="form-label">End Time</label>
-        <input type="time" class="form-control" id="endTime" required>
+        <input type="time" class="form-control" id="endTime" v-model="endTime" required>
       </div>
       <div class="mb-3">
         <label for="park" class="form-label">Select Park</label>

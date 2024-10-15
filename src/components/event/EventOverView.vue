@@ -51,6 +51,16 @@ const prevPage = () => {
 onMounted(() => {
   fetchAllEvents();
 });
+
+// Function to handle the updateEvent event
+const handleUpdateEvent = (updatedEvent) => {
+  const index = events.value.findIndex(event => event.id === updatedEvent.id);
+  if (index !== -1) {
+    events.value[index] = { ...events.value[index], ...updatedEvent };
+  } else {
+    console.error('Event not found:', updatedEvent);
+  }
+};
 </script>
 
 <template>
@@ -66,7 +76,7 @@ onMounted(() => {
           v-for="(event, index) in paginatedEvents"
           :key="index"
       >
-        <EventCard :events="[event]" class="event-card" />
+        <EventCard :event="event" class="event-card" @update-event="handleUpdateEvent" />
       </div>
     </div>
 

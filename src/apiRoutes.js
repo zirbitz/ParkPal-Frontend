@@ -16,6 +16,7 @@ export const API_ROUTES = {
     COUNTRIES_DELETE: (countryId) => `${BASE_URL}/countries/${countryId}`,
     EVENTS_WITH_OPTIONAL_PARAMS: buildEventsUrl,
     EVENTS_BY_ID: (eventId) => `${BASE_URL}/events/${eventId}`,
+    EVENTS_PARTICIPATION: (eventId, isJoining) => `${BASE_URL}/events/${eventId}/participation?isJoining=${isJoining}`,
     EVENTTAGS: buildEventTagsUrl,
     EVENTTAGS_BY_ID: (eventTagId) => `${BASE_URL}/event-tags/${eventTagId}`,
     FILES: buildFilesUrl,
