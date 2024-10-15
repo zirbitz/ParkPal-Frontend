@@ -70,7 +70,6 @@ async function fetchUserProfilePicture(profilePictureId) {
   try {
     const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${profilePictureId}`, {
       responseType: 'blob',
-      withCredentials: true,
     });
 
     // Create a URL for the profile picture blob

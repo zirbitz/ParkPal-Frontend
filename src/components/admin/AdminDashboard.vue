@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router';
-const router = useRouter();
+import {useRouter} from 'vue-router';
 import EventCard from "@/components/event/EventCard.vue";
+
+const router = useRouter();
 
 // Define state for users, events, files, and pagination
 const users = ref([]);
@@ -43,7 +44,7 @@ const paginatedEvents = computed(() => {
 // Fetch users and events on component mount
 const fetchUsers = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/users', {withCredentials: true}); // Ensure endpoint is correct
+    const response = await axios.get('http://localhost:8080/users'); // Ensure endpoint is correct
     users.value = response.data;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -52,7 +53,7 @@ const fetchUsers = async () => {
 
 const fetchEvents = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/events', {withCredentials: true}); // Ensure endpoint is correct
+    const response = await axios.get('http://localhost:8080/events'); // Ensure endpoint is correct
     events.value = response.data;
   } catch (error) {
     console.error("Error fetching events:", error);
@@ -61,7 +62,7 @@ const fetchEvents = async () => {
 const deleteEvent = async (index) => {
   try {
     const event = paginatedEvents.value[index];
-    await axios.delete(`http://localhost:8080/events/${event.id}`, {withCredentials: true}); // Assuming DELETE API exists
+    await axios.delete(`http://localhost:8080/events/${event.id}`); // Assuming DELETE API exists
     events.value = events.value.filter(e => e.id !== event.id); // Remove event from list
   } catch (error) {
     console.error("Error deleting event:", error);
@@ -176,7 +177,7 @@ onMounted(() => {
           <h3 class="card-title mb-3">All Created Events</h3>
           <div class="row row-cols-1 row-cols-md-2 g-4 mt-2">
             <div v-for="(event, index) in paginatedEvents" :key="event.id" class="event-card col">
-              <EventCard :events="[event]" />
+              <EventCard :event="event" />
               <div class="d-flex justify-content-between mt-3 mb-3">
                 <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
                 <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
