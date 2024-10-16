@@ -1,11 +1,11 @@
 <script setup>
-import {onMounted, ref} from 'vue';
+import { onMounted, ref } from 'vue';
 import axios from 'axios';
-import {fetchUserData} from "@/service/authService.js";
-import {useRouter} from 'vue-router';
-import {API_ROUTES} from "@/apiRoutes.js"; // Import useRouter
+import { fetchUserData } from "@/service/authService.js";
+import { useRouter } from 'vue-router';
+import { API_ROUTES } from "@/apiRoutes.js";
 
-const router = useRouter(); // Initialize router
+const router = useRouter();
 
 const props = defineProps({
   eventId: {
@@ -18,13 +18,12 @@ console.log('Event ID:', props.eventId);
 
 const mediaFiles = ref([]);
 const selectedTags = ref(new Set());
-const updateMediaFileIds = ref([]); // To store the IDs of uploaded media files
+const updateMediaFileIds = ref([]);
 const parks = ref([]);
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
-const showDeletePopup = ref(false); // Show popup on delete success
+const showDeletePopup = ref(false);
 
-// Form data
 const formData = ref({
   title: '',
   description: '',
@@ -37,10 +36,9 @@ const formData = ref({
   joinedUserNames: []
 });
 
-// Fetch event data to populate the form
 const fetchEventData = async () => {
   try {
-    const response = await axios.get(API_ROUTES.EVENTS_BY_ID(props.eventId,{withCredentials: true}));
+    const response = await axios.get(API_ROUTES.EVENTS_BY_ID(props.eventId), { withCredentials: true });
     const event = response.data;
     formData.value = {
       eventId: event.eventId,
@@ -55,21 +53,44 @@ const fetchEventData = async () => {
       updateMediaFileIds: event.mediaFileIds
     };
     selectedParkId.value = event.parkId;
+
+    // Fetch all images based on mediaFileExternalIds
+    const mediaResponses = await Promise.all(
+        event.mediaFileExternalIds.map(async (id) => {
+          const response = await axios.get(`http://localhost:8080/files/${id}`, { responseType: 'blob', withCredentials: true });
+          const imageUrl = URL.createObjectURL(response.data);
+          return { id, url: imageUrl };
+        })
+    );
+    mediaFiles.value = mediaResponses;
+    console.log(mediaFiles.value);
   } catch (error) {
     console.error('Error fetching event data:', error);
   }
 };
 
-// Delete the event
+const deleteExistingMediaFile = async (fileId, index) => {
+  if (!fileId) {
+    console.error('File ID is not defined');
+    return;
+  }
+  try {
+    await axios.delete(`http://localhost:8080/files/${fileId}`, { withCredentials: true });
+    mediaFiles.value.splice(index, 1);
+  } catch (error) {
+    console.error('Error deleting media file:', error.response?.data || error.message);
+  }
+};
+
+
 const deleteEvent = async () => {
   try {
     const confirmed = window.confirm("Are you sure you want to delete this event?");
     if (!confirmed) return;
 
-    await axios.delete(API_ROUTES.EVENTS_BY_ID(props.eventId),{withCredentials: true});
+    await axios.delete(API_ROUTES.EVENTS_BY_ID(props.eventId), { withCredentials: true });
     showDeletePopup.value = true;
 
-    // Navigate back to EventOverview.vue after success
     setTimeout(() => {
       router.push('/eventOverview');
     }, 2000);
@@ -78,33 +99,24 @@ const deleteEvent = async () => {
   }
 };
 
-// Fetch parks from the API on component mount
 onMounted(async () => {
   try {
-    const response = await axios.get(API_ROUTES.PARKS,{withCredentials: true});
+    const response = await axios.get(API_ROUTES.PARKS, { withCredentials: true });
     parks.value = response.data;
   } catch (error) {
     console.error('Error fetching parks:', error);
   }
-  await fetchEventData(); // Fetch event data after parks are fetched
+  await fetchEventData();
 });
 
-// Handle file selection
 const handleFileSelection = (event) => {
-  try {
-    const files = Array.from(event.target.files);
-    files.forEach(file => {
-      if (file && !file.previewUrl) {
-        createObjectURL(file);
-      }
-    });
-    mediaFiles.value = [...mediaFiles.value, ...files];
-  } catch (error) {
-    console.error('Error handling file selection:', error);
-  }
+  const files = Array.from(event.target.files);
+  files.forEach(file => {
+    file.previewUrl = URL.createObjectURL(file);
+    mediaFiles.value.push(file);
+  });
 };
 
-// Remove a media file from the list
 const removeMediaFile = (index) => {
   try {
     const file = mediaFiles.value[index];
@@ -117,7 +129,6 @@ const removeMediaFile = (index) => {
   }
 };
 
-// Remove all media files
 const removeAllMediaFiles = () => {
   try {
     mediaFiles.value.forEach(file => {
@@ -131,7 +142,6 @@ const removeAllMediaFiles = () => {
   }
 };
 
-// Create a preview URL for the files
 const createObjectURL = (file) => {
   try {
     const url = URL.createObjectURL(file);
@@ -142,33 +152,33 @@ const createObjectURL = (file) => {
   }
 };
 
-// Upload media files to the FileController
-const uploadMediaFiles = async () => {
-  try {
-    const promises = mediaFiles.value.map(async (file) => {
-      const formData = new FormData();
-      formData.append('file', file);
+async function uploadPictureToMinio() {
+  if (!this.userPicture) {
+    this.pictureError = 'Please upload a picture.';
+    return null;
+  }
 
-      try {
-        const response = await axios.post(API_ROUTES.FILES, formData, {withCredentials: true,
-          headers: {'Content-Type': 'multipart/form-data'}
-        });
-        return response.data;
-      } catch (uploadError) {
-        console.error('Error uploading file:', file.name, uploadError);
-        throw uploadError;
-      }
+  const formData = new FormData();
+  formData.append('file', this.userPicture);
+
+  try {
+    const response = await axios.post(API_ROUTES.MINIO, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      withCredentials: true,
     });
 
-    const fileIds = await Promise.all(promises);
-    updateMediaFileIds.value = fileIds;
-  } catch (error) {
-    console.error('Error uploading media files:', error);
-    throw error;
-  }
-};
+    console.log(response)
 
-// Toggle selection for tags
+    return response.data;  // Adjust this if your response is different
+  } catch (error) {
+    console.error('Error uploading the picture:', error);
+    this.pictureError = 'Error uploading the picture. Please try again.';
+    return null;
+  }
+}
+
 const toggleTagSelection = (event) => {
   try {
     const tag = event.target.dataset.value;
@@ -182,19 +192,16 @@ const toggleTagSelection = (event) => {
   }
 };
 
-// Check if a tag is selected
 const isTagSelected = (tag) => selectedTags.value.has(tag);
 
 const submitForm = async (event) => {
   event.preventDefault();
 
   try {
-    // Upload media files if any
     if (mediaFiles.value.length > 0) {
       await uploadMediaFiles();
     }
 
-    // Fetch the user ID
     const userData = await fetchUserData();
     if (!userData || !userData.id) {
       console.error('User is not authenticated.');
@@ -202,9 +209,8 @@ const submitForm = async (event) => {
     }
 
     formData.value.creatorUserId = userData.id;
-    formData.value.creatorName = userData.name; // Add this line if you have the creator name
+    formData.value.creatorName = userData.name;
 
-    // Prepare the updated data
     const updatedEvent = {
       id: props.eventId,
       title: formData.value.title,
@@ -218,11 +224,10 @@ const submitForm = async (event) => {
       joinedUserNames: formData.value.joinedUserNames || [],
       mediaFileIds: updateMediaFileIds.value.length ? updateMediaFileIds.value : formData.value.updateMediaFileIds || [],
       eventTagsIds: Array.from(selectedTags.value),
-      eventTagNames: [], // Add names here if applicable
+      eventTagNames: [],
     };
 
-    // Send PUT request to update the event
-    const response = await axios.put(API_ROUTES.EVENTS_BY_ID(props.eventId), updatedEvent, {withCredentials: true});
+    const response = await axios.put(API_ROUTES.EVENTS_BY_ID(props.eventId), updatedEvent, { withCredentials: true });
 
     console.log('Event updated successfully:', response.data);
 
@@ -231,7 +236,6 @@ const submitForm = async (event) => {
       showSuccessPopup.value = false;
     }, 3000);
 
-    // Navigate back to EventOverview.vue after success
     await router.push('/eventOverview');
   } catch (error) {
     console.error('Error updating event:', error.response?.data || error.message);
@@ -268,15 +272,18 @@ const submitForm = async (event) => {
         </select>
       </div>
       <div class="mb-3">
-        <label for="eventMedia" class="form-label">List of Event Media (Attachments)</label>
+        <label for="eventMedia" class="form-label">Event Media (Attachments)</label>
         <div class="input-group mb-3 custom-width-input">
           <input type="file" class="form-control" id="eventMedia" multiple @change="handleFileSelection">
-          <button class="btn btn-outline-secondary" type="button" @click="removeAllMediaFiles">Remove All</button>
         </div>
         <div class="media-preview">
-          <div v-for="(file, index) in mediaFiles" :key="index" class="file-item">
-            <img :src="file.previewUrl" alt="File preview" class="preview-image">
-            <button type="button" @click="removeMediaFile(index)">Remove</button>
+          <div v-for="(file, index) in mediaFiles" :key="file.id || index" class="file-item">
+            <template v-if="file.url || file.previewUrl">
+              <img v-if="file.url" :src="file.url" alt="File preview" class="preview-image" />
+              <img v-else :src="file.previewUrl" alt="File preview" class="preview-image" />
+            </template>
+            <button class="btn-tertiary" v-if="file.id" @click="() => deleteExistingMediaFile(file.id, index)">Delete</button>
+            <button v-else @click="() => removeMediaFile(index)">Remove</button>
           </div>
         </div>
       </div>
@@ -292,7 +299,6 @@ const submitForm = async (event) => {
       <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
         Event updated successfully!
       </div>
-
       <div v-if="showDeletePopup" class="alert alert-danger mt-3" role="alert">
         Event deleted successfully!
       </div>

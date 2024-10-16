@@ -25,8 +25,8 @@
       <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
       <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
       <p class="card-text"><strong>Creator:</strong>
-        <!-- Link to the creator's public profile -->
-        <a :href="`/userprofile/${event.creatorUserId}`">{{ event.creatorName || 'Unknown' }}</a>
+        <!-- Use the fetched creator's username -->
+        <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
       </p>
       <p class="card-text"><strong>Joined Users:</strong></p>
       <ul class="text-center">
@@ -67,11 +67,11 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
-import {fetchUserData} from '@/service/authService.js';
-import {useRouter} from "vue-router";
+import { onMounted, ref } from 'vue';
+import { fetchUserData } from '@/service/authService.js';
+import { useRouter } from "vue-router";
 import axios from "axios";
-import {API_ROUTES} from "@/apiRoutes.js";
+import { API_ROUTES } from "@/apiRoutes.js";
 
 // Accept events as a prop
 const props = defineProps({
@@ -98,28 +98,57 @@ const formatDate = (date) => {
 // Define emits
 const emit = defineEmits(['updateEvent']);
 
-// Reactive property to store the user ID
+// Reactive properties to store user ID and creator's username
 const userId = ref(null);
+const creatorUsername = ref('Unknown');
+
+// Function to fetch the creator's username
+const fetchCreatorUsername = async (creatorUserId) => {
+  try {
+    const response = await axios.get(API_ROUTES.USERS_BY_ID(creatorUserId));
+    creatorUsername.value = response.data.userName;
+  } catch (error) {
+    console.error('Error fetching creator username:', error);
+  }
+};
 
 // Function to check if the current user is the creator of the event
 const isCreator = (event) => {
   return userId.value && String(userId.value) === String(event.creatorUserId);
 };
 
+// Function to check if the user has joined the event
 const isUserJoined = (event) => {
   return event.joinedUserIds?.includes(userId.value);
 };
 
-const toggleJoin = async (event, e) => {
+// Fetch joined users
+const fetchJoinedUsers = async () => {
+  try {
+    // Make the request with the correct URL and event ID
+    const response = await axios.get(`http://localhost:8080/events/${props.event.id}`);
+
+    // Assuming response.data contains joinedUserNames and joinedUserIds
+    const joinedUserNames = response.data.joinedUserNames || [];
+    const joinedUserIds = response.data.joinedUserIds || [];
+
+    // Update the local event data to reflect the joined user names
+    event.joinedUserNames = joinedUserNames;
+    event.joinedUserIds = joinedUserIds;
+  } catch (error) {
+    console.error('Error fetching joined users:', error);
+  }
+};
+
+// Function to join or unjoin an event
+const toggleJoin = async (event) => {
   try {
     const isJoining = !isUserJoined(event);
     const updatedJoinedUserIds = isJoining
         ? [...event.joinedUserIds, userId.value]
         : event.joinedUserIds.filter(id => id !== userId.value);
 
-    const response = await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.id, isJoining)
-        , null
-        , { withCredentials: true });
+    const response = await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.id, isJoining), null, { withCredentials: true });
 
     const joinedUserNames = Array.isArray(response.data) ? response.data : [];
 
@@ -133,8 +162,6 @@ const toggleJoin = async (event, e) => {
     event.joinedUserIds = updatedJoinedUserIds;
     event.joinedUserNames = joinedUserNames;
 
-    console.log('Updated event:', updatedEvent); // Check the updated event data
-
     // Emit the updateEvent event to the parent component
     emit('updateEvent', updatedEvent);
   } catch (error) {
@@ -142,7 +169,7 @@ const toggleJoin = async (event, e) => {
   }
 };
 
-// Fetch user data on component mount
+// Fetch user data, creator username, and joined users on component mount
 onMounted(async () => {
   try {
     const userData = await fetchUserData();
@@ -152,14 +179,16 @@ onMounted(async () => {
     } else {
       console.error('Failed to fetch user data or userId is missing.');
     }
+
+    // Fetch the creator's username based on creatorUserId
+    await fetchCreatorUsername(props.event.creatorUserId);
+
+    // Fetch the joined users list
+    await fetchJoinedUsers();
   } catch (error) {
     console.error('Error fetching user data:', error);
   }
 });
-
-//const addPlaceholder = (event, placeholderSrc) => {
-//  event.target.src = placeholderSrc;
-//};
 </script>
 
 <style scoped>
