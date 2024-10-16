@@ -177,14 +177,38 @@ export default {
         console.error('Error fetching countries:', error);
       }
     },
-    filterParks() {
-      const query = this.parkSearchQuery.trim().toLowerCase();
-      this.filteredParks = this.parks.filter((park) =>
-          park.name.toLowerCase().includes(query)
-      );
+    async fetchCountryById(countryId) {
+      try {
+        console.log(countryId)
+        const response = await axios.get(`${API_ROUTES.COUNTRIES}/${countryId}`, {withCredentials: true});
+        return response.data;  // Return the country data
+      } catch (error) {
+        console.error('Error fetching country by ID:', error);
+        return null;  // Return null if there's an error
+      }
     },
-    selectPark(park) {
+    async selectPark(park) {
       this.selectedPark = park;
+
+      let country = null;
+
+      if (park.address?.country) {
+        // Check if the country is an object or just an ID
+        if (typeof park.address.country === 'object' && park.address.country.name) {
+          // If it's already an object, find the corresponding country in the countries array
+          country = this.countries.find(c => c.id === park.address.country.id);
+        } else {
+          // If it's an ID, find it in the pre-fetched countries list
+          country = this.countries.find(c => c.id === park.address.country);
+
+          // If it's still not found, fetch it from the API
+          if (!country) {
+            country = await this.fetchCountryById(park.address.country);
+          }
+        }
+      }
+
+      // Update form with selected park details
       this.form = {
         name: park.name || '',
         description: park.description || '',
@@ -192,9 +216,11 @@ export default {
           streetNumber: park.address?.streetNumber || '',
           zipCode: park.address?.zipCode || '',
           city: park.address?.city || '',
-          country: park.address?.country || null
+          country: country || null  // Ensure we assign the correct country object
         }
       };
+
+      console.log(this.form.address.country);  // Debug: check if the country object is correctly set
     },
     async submitForm() {
       this.validateName();

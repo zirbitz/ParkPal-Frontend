@@ -1,40 +1,68 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import ParkCard from "@/components/park/ParkCard.vue";
 import ParkInfo from "@/components/park/ParkInfo.vue";
-import {API_ROUTES} from "@/apiRoutes.js";
+import { API_ROUTES } from "@/apiRoutes.js";
 import axios from "axios";
 
 // Refs for parks, selected park, and search query
 const parks = ref([]);
 const selectedPark = ref(null);
-const searchQuery = ref('');  // Make sure searchQuery is a ref
+const searchQuery = ref('');
+const loadingEvents = ref(false);
 
 // Fetch parks from backend
 const fetchParks = async () => {
   try {
     const response = await axios.get(API_ROUTES.PARKS);
-    console.log(response)
-    if (response.status === 200) {
-      const data = await response.data;
-      parks.value = data;
-      console.log(data)
+    if (response && response.data) {
+      parks.value = response.data; // Set parks data initially
+      console.log(response.data);
+
+      // Fetch event details for each park after the parks are loaded
+      parks.value.forEach((park) => fetchEventDetails(park));
     } else {
-      console.error('Failed to fetch parks. Status:', response.status, 'StatusText:', response.statusText);
+      console.error('Failed to fetch parks.');
     }
   } catch (error) {
     console.error('Error fetching parks:', error);
   }
 };
 
-// Fetch parks when component is mounted
+// Fetch event details for a specific park
+const fetchEventDetails = async (park) => {
+  try {
+    // Check if eventIds exist and have length
+    if (!park.eventIds || park.eventIds.length === 0) {
+      console.error('No event IDs found for this park');
+      return;
+    }
+
+    const eventPromises = park.eventIds.map(eventId =>
+        axios.get(`http://localhost:8080/events/${eventId}`)
+    );
+    const eventResponses = await Promise.all(eventPromises);
+    const fullEvents = eventResponses.map(response => response.data);
+
+    // Ensure the park gets updated in place to trigger reactivity
+    const updatedPark = { ...park, events: fullEvents || [] }; // Default empty array if no events
+    const parkIndex = parks.value.findIndex(p => p.id === park.id);
+    if (parkIndex !== -1) {
+      parks.value[parkIndex] = updatedPark; // Update park in the array with events
+    }
+  } catch (error) {
+    console.error('Error fetching event details:', error);
+  }
+};
+
+// Fetch parks when the component is mounted
 onMounted(() => {
   fetchParks();
 });
 
-// Show ParkInfo modal
+// Show ParkInfo modal and fetch detailed event information for modal view
 const showParkSection = (park) => {
-  selectedPark.value = park;
+  selectedPark.value = park;  // Select the park for modal view
 };
 
 // Close the modal
@@ -42,17 +70,14 @@ const closeModal = () => {
   selectedPark.value = null;
 };
 
-// Computed property for filtering parks based on the search query
+// Computed property for filtering parks
 const filteredParks = computed(() => {
-  const query = searchQuery.value.toString().toLowerCase(); // Access searchQuery.value
-  if (!query) {
-    return parks.value;
-  }
+  const query = searchQuery.value.toLowerCase();
+  if (!query) return parks.value;
 
   return parks.value.filter(park => {
-    const parkName = park.name ? park.name.toString().toLowerCase() : '';
-    const parkAddress = park.address ? park.address.toString().toLowerCase() : '';
-
+    const parkName = park.name ? park.name.toLowerCase() : '';
+    const parkAddress = park.address ? park.address.toLowerCase() : '';
     return parkName.includes(query) || parkAddress.includes(query);
   });
 });
@@ -64,7 +89,6 @@ const filteredParks = computed(() => {
     <nav class="navbar bg-body-tertiary">
       <div class="d-flex justify-content-start">
         <form class="d-flex justify-content-end" role="search" @submit.prevent>
-          <!-- Bind input to searchQuery and handle input event -->
           <input
               class="form-control me-2"
               type="search"
@@ -77,24 +101,21 @@ const filteredParks = computed(() => {
       </div>
     </nav>
 
-    <!-- Error message when no parks are found -->
     <div v-if="filteredParks.length === 0" class="alert alert-warning mt-3" role="alert">
       No parks found matching your search criteria.
     </div>
 
-    <!-- Grid of ParkCards (filteredPparks) -->
     <div v-else class="row row-cols-1 row-cols-md-2 g-4">
       <div class="col" v-for="park in filteredParks" :key="park.id">
         <ParkCard id="park-card"
-            :title="park.name"
-            :address="park.address"
-            :events="park.eventDtos"
-            @click="showParkSection(park)" >
+                  :title="park.name"
+                  :address="park.address"
+                  :events="park.events || []"
+        @click="showParkSection(park)">
         </ParkCard>
       </div>
     </div>
 
-    <!-- Modal for ParkInfo -->
     <div v-if="selectedPark" class="modal fade show" tabindex="-1" style="display: block;">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -105,18 +126,24 @@ const filteredParks = computed(() => {
             </button>
           </div>
           <div class="modal-body">
-            <ParkInfo
-                :title="selectedPark.name"
-                :description="selectedPark.description"
-                :address="selectedPark.address"
-                :events="selectedPark.eventDtos"
-            />
+            <div v-if="loadingEvents" class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <div v-else>
+              <ParkInfo
+                  :title="selectedPark.name"
+                  :description="selectedPark.description"
+                  :address="selectedPark.address"
+                  :events="selectedPark.events || []"
+              />
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .modal-backdrop {
