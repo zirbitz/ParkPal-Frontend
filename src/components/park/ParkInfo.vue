@@ -75,58 +75,8 @@ const nextPage = () => {
     <div v-if="events.length">
       <h4>Upcoming Events:</h4>
 
-      <!-- Loop through the paginated events -->
-      <div v-for="event in paginatedEvents" :key="event.id" class="card">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            <!-- Check if eventTagNames exists and has a length -->
-            <span v-if="event?.eventTagNames && event.eventTagNames.length > 0">
-              <span v-for="(tagName, index) in event.eventTagNames" :key="index">
-                {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
-              </span>
-            </span>
-            <a :href="`events/${event.id}.html`">
-              <img :src="event.imageUrl || 'default_image_url.jpg'" :alt="event.title || 'Event image'" />
-            </a>
-          </li>
-        </ul>
-        <div class="card-body">
-          <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
-          <h6 class="card-text">
-            <a :href="`park/${event.parkId}.html`">Park</a>
-          </h6>
-          <p class="card-text">{{ event.description || 'No description available' }}</p>
-          <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-          <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
-          <p class="card-text"><strong>Creator:</strong>
-            <a :href="`user/${event.creatorUserId}.html`">{{ event.creatorName || 'Unknown' }}</a>
-          </p>
-          <p class="card-text"><strong>Joined Users:</strong></p>
-          <ul>
-            <li v-for="(userId, index) in event.joinedUserIds || []" :key="index">
-              <a :href="`user/${userId}.html`">User {{ index + 1 }}</a>
-            </li>
-          </ul>
-          <a href="#" class="btn btn-primary">Join</a>
-        </div>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            <a :href="`user/${event.creatorUserId}.html`">
-              <img :src="event.userPicture || 'default_user_image.jpg'" alt="User picture" />
-            </a>
-          </li>
-        </ul>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            <h6>Event Tags:</h6>
-            <p v-if="event?.eventTagNames && event.eventTagNames.length > 0">
-              <span v-for="(tagName, index) in event.eventTagNames" :key="index">
-                {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
-              </span>
-            </p>
-            <p v-else>No tags available</p>
-          </li>
-        </ul>
+      <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col">
+        <EventCard :event="event" />
       </div>
 
       <!-- Pagination Controls -->

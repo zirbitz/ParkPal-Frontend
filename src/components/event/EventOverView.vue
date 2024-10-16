@@ -2,36 +2,26 @@
 import {computed, onMounted, ref} from 'vue';
 import EventCard from "@/components/event/EventCard.vue";
 import axios from 'axios';
-import {API_ROUTES} from "@/apiRoutes.js";
 
 const events = ref([]); // All events from API
 const currentPage = ref(1); // Track the current page
-const eventsPerPage = ref(5); // Number of events per page
+const eventPage = ref(1);
+const eventsPerPage = 4;
 
-// Fetch all events from the backend
+const totalEventPages = computed(() => Math.ceil(events.value.length / eventsPerPage));
+
 const fetchAllEvents = async () => {
   try {
-    const response = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS());
-    if (Array.isArray(response.data)) {
-      events.value = response.data;
-    } else {
-      console.error("Expected an array but got:", response.data);
-    }
+    const response = await axios.get('http://localhost:8080/events'); // Ensure endpoint is correct
+    events.value = response.data;
   } catch (error) {
-    console.error('Error fetching events:', error);
+    console.error("Error fetching events:", error);
   }
 };
 
-// Computed property to get events for the current page
 const paginatedEvents = computed(() => {
-  const start = (currentPage.value - 1) * eventsPerPage.value;
-  const end = start + eventsPerPage.value;
-  return events.value.slice(start, end);
-});
-
-// Compute total pages
-const totalPages = computed(() => {
-  return Math.ceil(events.value.length / eventsPerPage.value);
+  const start = (eventPage.value - 1) * eventsPerPage;
+  return events.value.slice(start, start + eventsPerPage);
 });
 
 // Navigate to the next page
@@ -46,6 +36,16 @@ const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--;
   }
+};
+
+const prevEventPage = () => {
+  if (eventPage.value > 1) eventPage.value--;
+};
+const nextEventPage = () => {
+  if (eventPage.value < totalEventPages.value) eventPage.value++;
+};
+const goToEventPage = (page) => {
+  eventPage.value = page;
 };
 
 onMounted(() => {
@@ -67,25 +67,25 @@ const handleUpdateEvent = (updatedEvent) => {
   <div class="container md mb-3">
     <h1>All Events</h1>
     <hr>
-
-    <!-- Display events for the current page -->
-    <div class="row">
-      <!-- Loop through paginated events -->
-      <div
-          class="col-12 col-md-6 mb-3 d-flex justify-content-center"
-          v-for="(event, index) in paginatedEvents"
-          :key="index"
-      >
-        <EventCard :event="event" class="event-card" @update-event="handleUpdateEvent" />
+    <div class="row row-cols-2 g-3">
+      <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col">
+        <EventCard :event="event" />
       </div>
     </div>
 
-    <!-- Pagination controls -->
-    <div class="pagination-controls">
-      <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
-      <span>Page {{ currentPage }} of {{ totalPages }}</span>
-      <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
-    </div>
+    <nav aria-label="Event page navigation">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" :class="{ disabled: eventPage === 1 }">
+          <button class="page-link" @click="prevEventPage">Previous</button>
+        </li>
+        <li class="page-item" v-for="page in totalEventPages" :key="page" :class="{ active: eventPage === page }">
+          <button class="page-link" @click="goToEventPage(page)">{{ page }}</button>
+        </li>
+        <li class="page-item" :class="{ disabled: eventPage === totalEventPages }">
+          <button class="page-link" @click="nextEventPage">Next</button>
+        </li>
+      </ul>
+    </nav>
   </div>
 </template>
 

@@ -7,6 +7,8 @@ import {API_ROUTES} from "@/apiRoutes.js";
 
 const mediaFiles = ref([]);
 const selectedTags = ref(new Set());
+const customTagInput = ref("");  // New ref for custom tag input
+const availableTags = ref([]);   // To store tags fetched from the API
 const createMediaFileIds = ref([]); // To store the IDs of uploaded media files
 const parks = ref([]); // Store the list of parks
 const selectedParkId = ref('');
@@ -31,11 +33,21 @@ const endTS = computed(() => `${endDate.value}T${endTime.value}`);
 const title = ref('');
 const description = ref('');
 
+// Fetch available event tags from the API
+const fetchEventTags = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/event-tags');
+    availableTags.value = response.data;
+  } catch (error) {
+    console.error('Error fetching event tags:', error);
+  }
+};
 // Fetch parks from the API on component mount
 onMounted(async () => {
   try {
     const response = await axios.get(API_ROUTES.PARKS,{withCredentials: true});
     parks.value = response.data;
+    await fetchEventTags();
   } catch (error) {
     console.error('Error fetching parks:', error);
   }
@@ -121,19 +133,27 @@ const uploadMediaFiles = async () => {
     throw error; // Re-throw to handle higher up
   }
 };
-
-// Toggle selection for tags
-const toggleTagSelection = (event) => {
-  try {
-    const tag = event.target.dataset.value;
-    if (selectedTags.value.has(tag)) {
-      selectedTags.value.delete(tag);
-    } else {
-      selectedTags.value.add(tag);
-    }
-  } catch (error) {
-    console.error('Error toggling tag selection:', error);
+const toggleTagSelection = (tagId) => {
+  if (selectedTags.value.has(tagId)) {
+    selectedTags.value.delete(tagId);
+  } else {
+    selectedTags.value.add(tagId);
   }
+};
+
+// Add custom tag
+const addCustomTag = () => {
+  const tag = customTagInput.value.trim();
+  if (tag && !Array.from(selectedTags.value).includes(tag)) {
+    selectedTags.value.add(tag); // Add the custom tag to selectedTags
+    customTagInput.value = '';   // Clear the input field
+  }
+};
+
+const getTagName = (tag) => {
+  // Check if it's an ID from availableTags or a custom tag (string)
+  const foundTag = availableTags.value.find(t => t.id === tag);
+  return foundTag ? foundTag.name : tag; // If tag is found in availableTags, return its name, else it's a custom tag
 };
 
 // Check if a tag is selected
@@ -176,6 +196,7 @@ const submitForm = async (event) => {
       parkId: selectedParkId.value,
       creatorUserId: userId,
       mediaFileExternalIds: createMediaFileIds.value,
+      eventTagsIds: Array.from(selectedTags.value),
     };
 
     const url = API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userId, selectedParkId.value);
@@ -264,25 +285,30 @@ const submitForm = async (event) => {
         </div>
       </div>
       <div class="mb-3">
-        <label for="eventTags" class="form-label">Select Event Tags (Multiple Choices)</label>
+        <label for="eventTags" class="form-label">Select Event Tags</label>
         <div class="custom-select">
-          <select class="form-select" id="eventTags" multiple>
-            <option v-for="tag in ['tag1', 'tag2', 'tag3']" :key="tag" :value="tag">{{ tag }}</option>
+          <select class="form-select" id="eventTags" @change="toggleTagSelection($event.target.value)" multiple>
+            <option v-for="tag in availableTags" :key="tag.id" :value="tag.id" :selected="isTagSelected(tag.id)">
+              {{ tag.name }}
+            </option>
           </select>
-          <div class="custom-options">
-            <div
-                v-for="tag in ['tag1', 'tag2', 'tag3']"
-                :key="tag"
-                :data-value="tag"
-                @click="toggleTagSelection"
-                :class="{ 'highlighted': isTagSelected(tag) }"
-                class="custom-option"
-            >
-              {{ tag }}
-            </div>
-          </div>
+        </div>
+
+        <!-- Custom Tag Input -->
+        <div class="mt-2">
+          <input type="text" v-model="customTagInput" placeholder="Add custom tag" class="form-control mb-2">
+          <button type="button" class="btn btn-secondary" @click="addCustomTag">Add Tag</button>
+        </div>
+
+        <!-- Display selected tags -->
+        <div class="selected-tags mt-2">
+          <span v-for="tag in Array.from(selectedTags)" :key="tag" class="badge bg-primary me-2">
+            {{ getTagName(tag) }}
+            <button type="button" class="btn-close btn-close-white" @click="toggleTagSelection(tag)"></button>
+          </span>
         </div>
       </div>
+
       <button type="submit" class="btn btn-primary">Create Event</button>
     </form>
 

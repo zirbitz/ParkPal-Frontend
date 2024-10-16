@@ -2,18 +2,29 @@
   <div class="card">
     <ul class="list-group list-group-flush">
       <li class="list-group-item">
-        <span v-if="event?.eventTagNames?.length">
-          <span v-for="(tagName, index) in event.eventTagNames" :key="index">
-            {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
-          </span>
-        </span>
-        <a :href="`events/${event.id}.html`">
-          <img class="event-images"
-               :src="event.imageUrl || 'path_to_default_event_image.jpg'"
-               :alt="event.title || 'Event image'"
-               @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
-          />
-        </a>
+        <p v-if="eventTagNames?.length">
+      <span class="badge text-bg-primary" v-for="(tagName, index) in eventTagNames" :key="index">
+        {{ tagName }}<span v-if="index < eventTagNames.length - 1">, </span>
+      </span>
+        </p>
+        <p v-else>No tags available</p>
+        <div class="carousel-container">
+          <!-- Render the images -->
+          <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+            <img
+                v-for="(url, index) in eventImageUrls"
+                :key="index"
+                class="event-images"
+                :src="url"
+                :alt="event.title || 'Event image'"
+                @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
+            />
+          </div>
+
+          <!-- Carousel controls -->
+          <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide">❮</button>
+          <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide">❯</button>
+        </div>
       </li>
     </ul>
     <div class="card-body">
@@ -25,12 +36,10 @@
       <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
       <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
       <p class="card-text"><strong>Creator:</strong>
-        <!-- Use the fetched creator's username -->
         <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
       </p>
       <p class="card-text"><strong>Joined Users:</strong></p>
       <ul class="text-center">
-        <!-- Iterate through joined usernames and IDs to create links -->
         <li v-for="(username, index) in event.joinedUserNames || []" :key="username">
           <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
         </li>
@@ -38,29 +47,17 @@
       <a href="#" class="btn btn-primary text-center" @click.prevent="toggleJoin(event)">
         {{ isUserJoined(event) ? 'Unjoin' : 'Join' }}
       </a>
-      <button v-if="isCreator(event)" @click="editEvent(event.id)" class="btn btn-secondary ms-2">Edit</button>
     </div>
     <ul class="list-group list-group-flush">
       <li class="list-group-item">
         <a :href="`/userprofile/${event.creatorUserId}`">
           <img
               class="creator-image"
-              :src="event.userPicture || 'path_to_default_user_image.jpg'"
+              :src="creatorImageUrl || 'path_to_default_user_image.jpg'"
               alt="User picture"
               @error="addPlaceholder($event, '/src/assets/images/arial.jpg')"
           />
         </a>
-      </li>
-    </ul>
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item">
-        <h6>Event Tags:</h6>
-        <p v-if="event?.eventTagNames?.length">
-          <span v-for="(tagName, index) in event.eventTagNames" :key="index">
-            {{ tagName }}<span v-if="index < event.eventTagNames.length - 1">, </span>
-          </span>
-        </p>
-        <p v-else>No tags available</p>
       </li>
     </ul>
   </div>
@@ -73,7 +70,7 @@ import { useRouter } from "vue-router";
 import axios from "axios";
 import { API_ROUTES } from "@/apiRoutes.js";
 
-// Accept events as a prop
+// Accept event as a prop
 const props = defineProps({
   event: {
     type: Object,
@@ -84,11 +81,6 @@ const props = defineProps({
 // Vue Router setup
 const router = useRouter();
 
-// Function to navigate to EditEvent.vue page
-const editEvent = (eventId) => {
-  router.push({ name: 'UpdateEvent', params: { eventId } });
-};
-
 // Utility function to format event dates
 const formatDate = (date) => {
   const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
@@ -98,17 +90,67 @@ const formatDate = (date) => {
 // Define emits
 const emit = defineEmits(['updateEvent']);
 
-// Reactive properties to store user ID and creator's username
+// Reactive properties to store user ID, creator's username, and image URLs
 const userId = ref(null);
 const creatorUsername = ref('Unknown');
+const eventImageUrls = ref([]);
+const creatorImageUrl = ref(null);
+const currentSlide = ref(0);
+const eventTagNames = ref([]); // New state for event tag names
+
+
+const nextSlide = () => {
+  currentSlide.value = (currentSlide.value + 1) % eventImageUrls.value.length;
+};
+
+const prevSlide = () => {
+  currentSlide.value = (currentSlide.value - 1 + eventImageUrls.value.length) % eventImageUrls.value.length;
+};
+// Function to fetch the event tags
+const fetchEventTags = async () => {
+  try {
+    const tagIds = props.event.eventTagsIds || [];
+    const tagNames = await Promise.all(
+        tagIds.map(async (tagId) => {
+          const response = await axios.get(`http://localhost:8080/event-tags/${tagId}`);
+          return response.data.name; // Return tag name
+        })
+    );
+    eventTagNames.value = tagNames; // Set tag names
+  } catch (error) {
+    console.error('Error fetching event tags:', error);
+  }
+};
 
 // Function to fetch the creator's username
 const fetchCreatorUsername = async (creatorUserId) => {
   try {
     const response = await axios.get(API_ROUTES.USERS_BY_ID(creatorUserId));
     creatorUsername.value = response.data.userName;
+    creatorImageUrl.value = response.data.userPicture || null;
   } catch (error) {
     console.error('Error fetching creator username:', error);
+  }
+};
+
+// Function to fetch event media files
+const fetchEventImages = async (mediaFileIds) => {
+  try {
+    if (mediaFileIds && mediaFileIds.length > 0) {
+      const imageUrls = await Promise.all(
+          mediaFileIds.map(async (fileId) => {
+            const response = await axios.get(`${API_ROUTES.MINIO}/${fileId}`, {
+              responseType: 'blob',
+              withCredentials: true,
+            });
+            return URL.createObjectURL(response.data); // Return the object URL for each image
+          })
+      );
+
+      eventImageUrls.value = imageUrls; // Set all URLs
+    }
+  } catch (error) {
+    console.error('Error fetching event images:', error);
   }
 };
 
@@ -125,14 +167,9 @@ const isUserJoined = (event) => {
 // Fetch joined users
 const fetchJoinedUsers = async () => {
   try {
-    // Make the request with the correct URL and event ID
     const response = await axios.get(`http://localhost:8080/events/${props.event.id}`);
-
-    // Assuming response.data contains joinedUserNames and joinedUserIds
     const joinedUserNames = response.data.joinedUserNames || [];
     const joinedUserIds = response.data.joinedUserIds || [];
-
-    // Update the local event data to reflect the joined user names
     event.joinedUserNames = joinedUserNames;
     event.joinedUserIds = joinedUserIds;
   } catch (error) {
@@ -158,35 +195,31 @@ const toggleJoin = async (event) => {
       joinedUserNames: joinedUserNames,
     };
 
-    // Update the local event data to reflect the change
     event.joinedUserIds = updatedJoinedUserIds;
     event.joinedUserNames = joinedUserNames;
 
-    // Emit the updateEvent event to the parent component
     emit('updateEvent', updatedEvent);
   } catch (error) {
     console.error('Error updating event:', error);
   }
 };
 
-// Fetch user data, creator username, and joined users on component mount
+// Fetch user data, creator username, joined users, and event media files on component mount
 onMounted(async () => {
   try {
     const userData = await fetchUserData();
     if (userData && userData.id) {
       userId.value = userData.id;
-      console.log('Logged in userId:', userId.value); // Check if the userId is correct
     } else {
       console.error('Failed to fetch user data or userId is missing.');
     }
 
-    // Fetch the creator's username based on creatorUserId
     await fetchCreatorUsername(props.event.creatorUserId);
-
-    // Fetch the joined users list
     await fetchJoinedUsers();
+    await fetchEventImages(props.event.mediaFileExternalIds);
+    await fetchEventTags();
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Error initializing component:', error);
   }
 });
 </script>
@@ -219,7 +252,6 @@ onMounted(async () => {
   list-style-type: none;
 }
 
-/* Responsive images with max and min size */
 .event-images {
   height: auto;
   width: 100%;
@@ -228,6 +260,66 @@ onMounted(async () => {
   display: block;
   margin-left: auto;
   margin-right: auto;
+}
+
+.creator-image {
+  height: auto;
+  width: 50%;
+  max-width: 200px;
+  min-width: 100px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%; /* Make sure it's full width */
+}
+
+.carousel-slide {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+.event-images {
+  flex-shrink: 0;
+  width: 100%; /* Adjust the width to make sure only one image is visible */
+}
+
+.prev, .next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  z-index: 100;
+}
+
+.prev {
+  left: 10px;
+}
+
+.next {
+  right: 10px;
+}
+
+
+/* Responsive images */
+@media (max-width: 768px) {
+  .event-images {
+    max-width: 300px;
+    min-width: 150px;
+  }
+
+  .creator-image {
+    max-width: 150px;
+    min-width: 80px;
+  }
 }
 
 .creator-image {
