@@ -104,12 +104,29 @@ const goToEventPage = (page) => {
 const deleteEvent = async (index) => {
   try {
     const event = paginatedEvents.value[index];
-    await axios.delete(`http://localhost:8080/events/${event.id}`);
+    await axios.delete(`http://localhost:8080/events/${event.id}`, {withCredentials: true});
     events.value = events.value.filter(e => e.id !== event.id); // Remove event from list
   } catch (error) {
     console.error("Error deleting event:", error);
   }
 };
+
+const deleteUserProfile = async () => {
+  if (confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
+    try {
+      await axios.delete(API_ROUTES.USERS_BY_ID(userid.value), {
+        withCredentials: true,
+      });
+      alert('Profile deleted successfully.');
+      // Redirect or handle post-deletion, e.g., log out the user
+      await router.push("/login");
+    } catch (error) {
+      console.error('Failed to delete profile:', error);
+      alert('Error deleting profile.');
+    }
+  }
+};
+
 
 // Update event function
 const updateEvent = (index) => {

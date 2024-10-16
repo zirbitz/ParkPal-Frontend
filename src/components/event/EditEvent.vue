@@ -18,7 +18,8 @@ console.log('Event ID:', props.eventId);
 
 const mediaFiles = ref([]);
 const selectedTags = ref(new Set());
-const updateMediaFileIds = ref([]);
+const updateMediaFileIds = ref([]); // Store new media IDs after upload
+const existingMediaExternalIds = ref([]); // Store old media external IDs
 const parks = ref([]);
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
@@ -33,7 +34,8 @@ const formData = ref({
   creatorUserId: '',
   updateMediaFileIds: [],
   joinedUserIds: [],
-  joinedUserNames: []
+  joinedUserNames: [],
+
 });
 
 const fetchEventData = async () => {
@@ -54,9 +56,12 @@ const fetchEventData = async () => {
     };
     selectedParkId.value = event.parkId;
 
-    // Fetch all images based on mediaFileExternalIds
+    // Store existing media external IDs
+    existingMediaExternalIds.value = event.mediaFileExternalIds || [];
+
+    // Fetch and display existing media files based on external IDs
     const mediaResponses = await Promise.all(
-        event.mediaFileExternalIds.map(async (id) => {
+        existingMediaExternalIds.value.map(async (id) => {
           const response = await axios.get(`http://localhost:8080/files/${id}`, { responseType: 'blob', withCredentials: true });
           const imageUrl = URL.createObjectURL(response.data);
           return { id, url: imageUrl };
@@ -77,11 +82,16 @@ const deleteExistingMediaFile = async (fileId, index) => {
   try {
     await axios.delete(`http://localhost:8080/files/${fileId}`, { withCredentials: true });
     mediaFiles.value.splice(index, 1);
+
+    // Remove the deleted file from the existing media external IDs list
+    const fileIndex = existingMediaExternalIds.value.indexOf(fileId);
+    if (fileIndex > -1) {
+      existingMediaExternalIds.value.splice(fileIndex, 1);
+    }
   } catch (error) {
     console.error('Error deleting media file:', error.response?.data || error.message);
   }
 };
-
 
 const deleteEvent = async () => {
   try {
@@ -93,7 +103,7 @@ const deleteEvent = async () => {
 
     setTimeout(() => {
       router.push('/eventOverview');
-    }, 2000);
+    }, 1000);
   } catch (error) {
     console.error('Error deleting event:', error.response?.data || error.message);
   }
@@ -152,32 +162,31 @@ const createObjectURL = (file) => {
   }
 };
 
-async function uploadPictureToMinio() {
-  if (!this.userPicture) {
-    this.pictureError = 'Please upload a picture.';
-    return null;
+// Helper function to upload media files to Minio
+const uploadMediaFiles = async () => {
+  const uploadedIds = [];
+  for (const file of mediaFiles.value) {
+    if (file.previewUrl) {
+      // Upload only new media files (ones with previewUrl)
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await axios.post(API_ROUTES.MINIO, formData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        uploadedIds.push(response.data); // Collect the uploaded media file IDs
+      } catch (error) {
+        console.error('Error uploading media file:', error.response?.data || error.message);
+      }
+    }
   }
-
-  const formData = new FormData();
-  formData.append('file', this.userPicture);
-
-  try {
-    const response = await axios.post(API_ROUTES.MINIO, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      withCredentials: true,
-    });
-
-    console.log(response)
-
-    return response.data;  // Adjust this if your response is different
-  } catch (error) {
-    console.error('Error uploading the picture:', error);
-    this.pictureError = 'Error uploading the picture. Please try again.';
-    return null;
-  }
-}
+  updateMediaFileIds.value = uploadedIds; // Store uploaded media file IDs
+};
 
 const toggleTagSelection = (event) => {
   try {
@@ -211,6 +220,12 @@ const submitForm = async (event) => {
     formData.value.creatorUserId = userData.id;
     formData.value.creatorName = userData.name;
 
+    // Combine existing and newly uploaded media external IDs
+    const allMediaExternalIds = [
+      ...existingMediaExternalIds.value,  // Old media IDs from the event
+      ...updateMediaFileIds.value         // New media IDs from the upload
+    ];
+
     const updatedEvent = {
       id: props.eventId,
       title: formData.value.title,
@@ -222,7 +237,8 @@ const submitForm = async (event) => {
       creatorName: formData.value.creatorName,
       joinedUserIds: formData.value.joinedUserIds || [],
       joinedUserNames: formData.value.joinedUserNames || [],
-      mediaFileIds: updateMediaFileIds.value.length ? updateMediaFileIds.value : formData.value.updateMediaFileIds || [],
+      mediaFileIds: formData.value.updateMediaFileIds || [],
+      mediaFileExternalIds: allMediaExternalIds,  // Combine old and new media external IDs
       eventTagsIds: Array.from(selectedTags.value),
       eventTagNames: [],
     };
@@ -236,12 +252,13 @@ const submitForm = async (event) => {
       showSuccessPopup.value = false;
     }, 3000);
 
-    await router.push('/eventOverview');
   } catch (error) {
     console.error('Error updating event:', error.response?.data || error.message);
   }
 };
 </script>
+
+
 
 
 <template>
@@ -283,7 +300,7 @@ const submitForm = async (event) => {
               <img v-else :src="file.previewUrl" alt="File preview" class="preview-image" />
             </template>
             <button class="btn-tertiary" v-if="file.id" @click="() => deleteExistingMediaFile(file.id, index)">Delete</button>
-            <button v-else @click="() => removeMediaFile(index)">Remove</button>
+            <button class="btn-primary" v-else @click="() => removeMediaFile(index)">Remove</button>
           </div>
         </div>
       </div>
@@ -328,4 +345,40 @@ const submitForm = async (event) => {
 .video-preview {
   max-width: 200px;
 }
+
+.custom-width-input {
+  width: auto;
+}
+
+.media-preview {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* Spacing between media items */
+}
+
+.file-item {
+  position: relative;
+  display: inline-block;
+  text-align: center;
+}
+
+.preview-image {
+  width: 150px;  /* Fixed width */
+  height: 150px; /* Fixed height */
+  object-fit: cover; /* Crops images to fit the specified dimensions */
+  border: 1px solid #ddd; /* Optional border for better visibility */
+  border-radius: 5px; /* Optional rounded corners */
+}
+
+.file-item button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  padding: 5px;
+}
+
 </style>
