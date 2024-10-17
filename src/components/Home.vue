@@ -1,7 +1,6 @@
 <script setup>
 import ParkMap from './map/ParkMap.vue';
 import UserOverview from "@/components/user/UserOverview.vue";
-import ParksOverview from "@/components/park/ParksOverview.vue";
 </script>
 
 <template>
