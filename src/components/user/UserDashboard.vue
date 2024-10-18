@@ -7,6 +7,8 @@ import {API_ROUTES} from "@/apiRoutes.js";
 import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
 
+// Declare your refs and other variables here
+
 // Profile Data
 const user = ref(null);
 const userid = ref(null);
@@ -26,7 +28,7 @@ const showFlashMessage = ref(false);
 const flashMessageText = ref('');
 const selectedProfilePictureFile = ref(null); // Store the selected file temporarily
 const fileInputRef = ref(null); // Ref for file input
-
+const showSuccessPopup = ref(false);
 // Events Data
 const events = ref([]);
 const eventPage = ref(1);
@@ -38,6 +40,15 @@ const paginatedEvents = computed(() => {
   const start = (eventPage.value - 1) * eventsPerPage.value;
   return events.value.slice(start, start + eventsPerPage.value);
 });
+
+// ** Validations for all form fields **
+const isFirstNameValid = computed(() => firstName.value.trim() !== '');
+const isLastNameValid = computed(() => lastName.value.trim() !== '');
+const isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)); // Email regex validation
+const isUsernameValid = computed(() => username.value.trim() !== '');
+const isCountryValid = computed(() => country.value !== '');
+const isSalutationValid = computed(() => salutation.value.trim() !== '');
+const isGenderValid = computed(() => gender.value !== '');
 
 const fetchUserProfileAndEvents = async () => {
   try {
@@ -88,6 +99,23 @@ const fetchUserProfileAndEvents = async () => {
   } catch (error) {
     console.error('Failed to fetch user or events data:', error);
   }
+};
+
+// Validate inputs before updating profile
+const validateAndUpdateProfile = () => {
+  // Validate inputs before updating profile
+  if (firstName.value.trim() === '' || lastName.value.trim() === '' ||
+      !isEmailValid.value || username.value.trim() === '' ||
+      !isCountryValid.value || !isSalutationValid.value ||
+      !isGenderValid.value) {
+    showFlashMessage.value = true;
+    flashMessageText.value = 'Please fill in all required fields correctly.';
+    setTimeout(() => {
+      showFlashMessage.value = false;
+    }, 3000);
+    return;
+  }
+  updateProfile();
 };
 
 // Pagination functions for events
@@ -176,7 +204,11 @@ const updateProfile = async () => {
 
     user.value = response.data;
     showFlashMessage.value = true;
-    flashMessageText.value = 'Profile updated successfully';
+    showSuccessPopup.value = true;
+
+
+    window.scrollTo(0, 0);
+
     setTimeout(() => {
       showFlashMessage.value = false;
     }, 3000);
@@ -233,14 +265,14 @@ onMounted(async () => {
   <div class="container">
     <h1>My UserProfile</h1>
     <hr>
-    <div v-if="showFlashMessage" class="flash-message">
-      {{ flashMessageText }}
+    <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
+      Profile updated successfully
     </div>
     <div v-if="user">
       <div class="row">
         <div class="col-12 col-md-6">
           <h2>User Profile</h2>
-          <form @submit.prevent="updateProfile">
+          <form @submit.prevent="validateAndUpdateProfile">
 
             <div class="mb-3">
               <label for="profilePicture" class="form-label">Profile Picture</label>
@@ -260,35 +292,43 @@ onMounted(async () => {
 
             <div class="mb-3">
               <label for="firstName" class="form-label">First Name</label>
-              <input type="text" class="form-control" id="firstName" v-model="firstName">
+              <input type="text" class="form-control" id="firstName" v-model="firstName" :class="{ 'is-invalid': !isFirstNameValid }">
+              <p v-if="!isFirstNameValid" class="text-danger">First name is required.</p>
             </div>
             <div class="mb-3">
               <label for="lastName" class="form-label">Last Name</label>
-              <input type="text" class="form-control" id="lastName" v-model="lastName">
+              <input type="text" class="form-control" id="lastName" v-model="lastName" :class="{ 'is-invalid': !isLastNameValid }">
+              <p v-if="!isLastNameValid" class="text-danger">Last name is required.</p>
             </div>
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" v-model="email">
+              <input type="email" class="form-control" id="email" v-model="email" :class="{ 'is-invalid': !isEmailValid }">
+              <p v-if="!isEmailValid" class="text-danger">Please enter a valid email address.</p>
             </div>
             <div class="mb-3">
               <label for="username" class="form-label">Username</label>
-              <input type="text" class="form-control" id="username" v-model="username">
+              <input type="text" class="form-control" id="username" v-model="username" :class="{ 'is-invalid': !isUsernameValid }">
+              <p v-if="!isUsernameValid" class="text-danger">Username is required.</p>
             </div>
             <div class="mb-3">
               <label for="country" class="form-label">Country</label>
               <select class="form-select" id="country" v-model="country">
                 <option v-for="country in countries" :key="country.id" :value="country.id">{{ country.name }}</option>
               </select>
+              <p v-if="!isCountryValid" class="text-danger">Please select a country.</p>
             </div>
             <div class="mb-3">
               <label for="salutation" class="form-label">Salutation</label>
-              <input type="text" class="form-control" id="salutation" v-model="salutation">
+              <input type="text" class="form-control" id="salutation" v-model="salutation" :class="{ 'is-invalid': !isSalutationValid}">
+              <p v-if="!isSalutationValid" class="text-danger">Please enter a salutation.</p>
             </div>
             <div class="mb-3">
               <label for="gender" class="form-label">Gender</label>
-              <select class="form-select" id="gender" v-model="gender">
+              <select class="form-select" id="gender" v-model="gender" :class="{ 'is-invalid': !isGenderValid}">
+                <option value="">Select Gender</option>
                 <option v-for="option in genderOptions" :key="option" :value="option">{{ option }}</option>
               </select>
+              <p v-if="!isGenderValid" class="text-danger">Please select a gender.</p>
             </div>
             <div class="col btn-col text-center">
               <button type="submit" class="btn btn-primary">Update Profile</button>
