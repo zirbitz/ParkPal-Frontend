@@ -1,10 +1,10 @@
 <template>
   <div class="container mt-5">
     <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
-      Enter all the required fields.
+      Please fill in all required fields before submitting.
     </div>
     <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
-      Event successfully created
+      Park successfully created
     </div>
     <h2 class="mb-4">Create a Park</h2>
     <form @submit.prevent="submitForm">

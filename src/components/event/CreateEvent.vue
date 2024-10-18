@@ -326,7 +326,7 @@ const submitForm = async (event) => {
     <h1 class="text-center">Create Event</h1>
     <hr>
     <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
-      Enter all the required fields.
+      Please fill in all required fields before submitting.
     </div>
     <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
       Event successfully created
