@@ -1,14 +1,21 @@
 <template>
   <div class="container mt-5">
+    <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
+      Enter all the required fields.
+    </div>
+    <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
+      Event successfully created
+    </div>
     <h2 class="mb-4">Create a Park</h2>
     <form @submit.prevent="submitForm">
+      <!-- Park Name -->
       <div class="mb-3">
         <label for="name" class="form-label">Park Name *</label>
         <input
             type="text"
             id="name"
             v-model="form.name"
-            @blur="validateName"
+            @input="validateName"
             :class="['form-control', errors.name ? 'is-invalid' : '']"
             placeholder="Enter Park Name"
         />
@@ -17,18 +24,22 @@
         </div>
       </div>
 
-      <!-- Park Description (Optional) -->
+      <!-- Park Description -->
       <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
+        <label for="description" class="form-label">Description *</label>
         <textarea
             id="description"
             v-model="form.description"
-            class="form-control"
+            @input="validateDescription"
+            :class="['form-control', errors.description ? 'is-invalid' : '']"
             placeholder="Enter Park Description"
         ></textarea>
+        <div v-if="errors.description" class="invalid-feedback">
+          {{ errors.description }}
+        </div>
       </div>
 
-      <!-- TODO:Make this work in the backend. Address (Nested Object) -->
+      <!-- Address -->
       <div class="mb-3">
         <h4>Address</h4>
 
@@ -38,9 +49,13 @@
               type="text"
               id="streetNumber"
               v-model="form.address.streetNumber"
-              class="form-control"
+              @input="validateStreetNumber"
+              :class="['form-control', errors.streetNumber ? 'is-invalid' : '']"
               placeholder="Enter Street and Number"
           />
+          <div v-if="errors.streetNumber" class="invalid-feedback">
+            {{ errors.streetNumber }}
+          </div>
         </div>
 
         <div class="mb-3">
@@ -49,9 +64,13 @@
               type="text"
               id="zipCode"
               v-model="form.address.zipCode"
-              class="form-control"
+              @input="validateZipCode"
+              :class="['form-control', errors.zipCode ? 'is-invalid' : '']"
               placeholder="Enter ZIP Code"
           />
+          <div v-if="errors.zipCode" class="invalid-feedback">
+            {{ errors.zipCode }}
+          </div>
         </div>
 
         <div class="mb-3">
@@ -60,9 +79,13 @@
               type="text"
               id="city"
               v-model="form.address.city"
-              class="form-control"
+              @input="validateCity"
+              :class="['form-control', errors.city ? 'is-invalid' : '']"
               placeholder="Enter City"
           />
+          <div v-if="errors.city" class="invalid-feedback">
+            {{ errors.city }}
+          </div>
         </div>
 
         <!-- Country (Dropdown) -->
@@ -71,15 +94,19 @@
           <select
               id="country"
               v-model="form.address.country"
-              class="form-select"
+              @change="validateCountry"
+              :class="['form-select', errors.country ? 'is-invalid' : '']"
           >
-            <option v-for="country in countries" :key="country.id" :value="country">
+            <option value="">Select a country</option>
+            <option v-for="country in countries" :key="country.id" :value="country.name">
               {{ country.name }}
             </option>
           </select>
+          <div v-if="errors.country" class="invalid-feedback">
+            {{ errors.country }}
+          </div>
         </div>
       </div>
-
       <button type="submit" class="btn btn-primary mb-5">Create Park</button>
     </form>
   </div>
@@ -106,19 +133,80 @@ export default {
       errors: {
         name: ''
       },
-      countries: [] // To store the list of countries
+      countries: [], // To store the list of countries
+      showErrorPopup: false, // For error popup
+      showSuccessPopup: false // For success popup
     };
   },
+
+
   mounted() {
     this.fetchCountries();
+    this.validateAllFields(); // Validate all fields on page load
   },
+
   methods: {
+
+    validateAllFields() {
+      this.validateName();
+      this.validateDescription();
+      this.validateStreetNumber();
+      this.validateZipCode();
+      this.validateCity();
+      this.validateCountry();
+    },
+
+    // Validate Park Name
     validateName() {
-      // Check if name is empty
       if (!this.form.name) {
-        this.errors.name = "Park name not found. All parks need a name.";
+        this.errors.name = "Park name is required";
       } else {
         this.errors.name = "";
+      }
+    },
+
+    // Validate Description
+    validateDescription() {
+      if (!this.form.description) {
+        this.errors.description = "Description is required";
+      } else {
+        this.errors.description = "";
+      }
+    },
+
+    // Validate Street Number
+    validateStreetNumber() {
+      if (!this.form.address.streetNumber) {
+        this.errors.streetNumber = "Street and number are required.";
+      } else {
+        this.errors.streetNumber = "";
+      }
+    },
+
+    // Validate ZIP Code
+    validateZipCode() {
+      if (!this.form.address.zipCode) {
+        this.errors.zipCode = "ZIP code is required.";
+      } else {
+        this.errors.zipCode = "";
+      }
+    },
+
+    // Validate City
+    validateCity() {
+      if (!this.form.address.city) {
+        this.errors.city = "City is required.";
+      } else {
+        this.errors.city = "";
+      }
+    },
+
+    // Validate Country
+    validateCountry() {
+      if (!this.form.address.country) {
+        this.errors.country = "Country is required.";
+      } else {
+        this.errors.country = "";
       }
     },
     async fetchCountries() {
@@ -135,24 +223,43 @@ export default {
       }
     },
     async submitForm() {
-      // Validation check before submitting
+      // Validate all fields before submitting
       this.validateName();
+      this.validateStreetNumber();
+      this.validateZipCode();
+      this.validateCity();
+      this.validateCountry();
 
-      if (!this.errors.name) {
-        // Send the entire country object instead of just the country ID
-        const payload = {
-          ...this.form,
-          address: {
-            ...this.form.address,
-            country: this.form.address.country.id
-          }
-        };
-        try {
-          const response = await axios.post(API_ROUTES.PARKS, payload, {withCredentials: true});
-          console.log('Park created successfully', response.data);
-        } catch (error) {
-          console.error('Error creating park:', error);
+      // Check if there are any validation errors
+      const hasErrors = Object.values(this.errors).some((error) => error);
+      if (hasErrors) {
+        this.showErrorPopup = true; // Show the error popup
+        window.scrollTo(0, 0); // Scroll to the top
+        setTimeout(() => {
+          this.showErrorPopup = false; // Hide the popup after 3 seconds
+        }, 3000);
+        return; // Exit the method if there are errors
+      }
+
+      // Proceed with the submission if no errors
+      const payload = {
+        ...this.form,
+        address: {
+          ...this.form.address,
+          country: this.form.address.country.id // Assuming country is an object with an id
         }
+      };
+
+      try {
+        const response = await axios.post(API_ROUTES.PARKS, payload, { withCredentials: true });
+        this.showSuccessPopup = true; // Show success popup
+        window.scrollTo(0, 0); // Scroll to the top
+
+        setTimeout(() => {
+          this.showSuccessPopup = false; // Hide popup after 3 seconds
+        }, 3000);
+      } catch (error) {
+        console.error('Error creating park:', error);
       }
     }
   }
