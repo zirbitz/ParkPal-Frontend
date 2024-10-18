@@ -33,6 +33,11 @@ const endTS = computed(() => `${endDate.value}T${endTime.value}`);
 const title = ref('');
 const description = ref('');
 
+const showErrorModal = ref(false);  // Ref to control the visibility of the error modal
+const errorMessage = ref('');
+
+const descriptionLength = computed(() => description.value.length);
+
 // Fetch available event tags from the API
 const fetchEventTags = async () => {
   try {
@@ -141,13 +146,45 @@ const toggleTagSelection = (tagId) => {
   }
 };
 
-// Add custom tag
 const addCustomTag = () => {
   const tag = customTagInput.value.trim();
-  if (tag && !Array.from(selectedTags.value).includes(tag)) {
-    selectedTags.value.add(tag); // Add the custom tag to selectedTags
-    customTagInput.value = '';   // Clear the input field
+
+  // Check if the tag length is between 3 and 50 characters
+  if (tag.length < 3 || tag.length > 50) {
+    // Set error message, clear the input field, and show the error modal
+    errorMessage.value = 'Tag must be between 3 and 50 characters long.';
+    showErrorModal.value = true;
+    customTagInput.value = ''; // Clear the input field
+    hideErrorModalAfterDelay();
+    return;
   }
+
+  // Check if the custom tag already exists in the available tags or selected tags
+  const tagExistsInAvailableTags = availableTags.value.some(t => t.name.toLowerCase() === tag.toLowerCase());
+  const tagExistsInSelectedTags = Array.from(selectedTags.value).some(selectedTag => {
+    const foundTag = availableTags.value.find(t => t.id === selectedTag);
+    return foundTag && foundTag.name.toLowerCase() === tag.toLowerCase();
+  });
+
+  if (tagExistsInAvailableTags || tagExistsInSelectedTags) {
+    // Set error message, clear the input field, and show the error modal
+    errorMessage.value = 'This tag already exists or has already been selected.';
+    showErrorModal.value = true;
+    customTagInput.value = ''; // Clear the input field
+    hideErrorModalAfterDelay();
+  } else {
+    // Add the custom tag to the selected tags
+    selectedTags.value.add(tag);
+    customTagInput.value = ''; // Clear the input field
+    showErrorModal.value = false; // Hide the error modal if shown previously
+  }
+};
+
+const hideErrorModalAfterDelay = () => {
+  setTimeout(() => {
+    showErrorModal.value = false;
+    errorMessage.value = ''; // Clear the error message when the modal is hidden
+  }, 3000); // Adjust delay time as needed
 };
 
 const getTagName = (tag) => {
@@ -159,9 +196,21 @@ const getTagName = (tag) => {
 // Check if a tag is selected
 const isTagSelected = (tag) => selectedTags.value.has(tag);
 
+const limitDescriptionLength = () => {
+  if (description.value.length > 1000) {
+    description.value = description.value.substring(0, 1000);
+  }
+};
 
 const submitForm = async (event) => {
   event.preventDefault();
+
+  if (description.value.length > 1000) {
+    errorMessage.value = 'Description cannot exceed 1000 characters.';
+    showErrorModal.value = true;
+    hideErrorModalAfterDelay();
+    return;
+  }
 
   try {
     // First, upload media files
@@ -230,7 +279,11 @@ const submitForm = async (event) => {
       </div>
       <div class="mb-3">
         <label for="description" class="form-label">Event Description</label>
-        <textarea class="form-control" id="description" v-model="description" rows="3" required></textarea>
+        <textarea class="form-control" id="description" v-model="description" rows="3" required  @input="limitDescriptionLength"></textarea>
+        <p class="text-muted">
+          {{ descriptionLength }}/1000 characters
+        </p>
+        <p v-if="showErrorModal" class="text-danger mt-1">{{ errorMessage }}</p>
       </div>
       <div class="mb-3">
         <label for="startDate" class="form-label">Start Date</label>
@@ -265,7 +318,7 @@ const submitForm = async (event) => {
               accept=".jpg, .png, .gif"
               @change="handleFileSelection"
           >
-          <button class="btn btn-outline-secondary" type="button" @click="removeAllMediaFiles">
+          <button class="btn btn-tertiary" type="button" @click="removeAllMediaFiles">
             Remove All
           </button>
         </div>
@@ -300,6 +353,8 @@ const submitForm = async (event) => {
           <button type="button" class="btn btn-secondary" @click="addCustomTag">Add Tag</button>
         </div>
 
+        <p v-if="showErrorModal" class="text-danger mt-1">{{ errorMessage }}</p>
+
         <!-- Display selected tags -->
         <div class="selected-tags mt-2">
           <span v-for="tag in Array.from(selectedTags)" :key="tag" class="badge bg-primary me-2">
@@ -309,7 +364,7 @@ const submitForm = async (event) => {
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary">Create Event</button>
+      <button type="submit" class="btn btn-primary mb-5" @keydown.enter.prevent>Create Event</button>
     </form>
 
     <div v-if="showSuccessPopup" class="popup">
@@ -388,5 +443,21 @@ const submitForm = async (event) => {
 
 .table-borderless td, .table-borderless th {
   border: none;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+}
+.modal-body{
+  border: red;
+}
+.modal {
+  z-index: 5000;
 }
 </style>

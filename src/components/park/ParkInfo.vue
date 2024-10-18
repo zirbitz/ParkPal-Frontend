@@ -107,7 +107,7 @@ const nextPage = () => {
 }
 
 .pagination button {
-  background-color: #007bff;
+  background-color: #B00101;
   color: #fff;
   border: none;
   padding: 10px 20px;
@@ -125,7 +125,7 @@ const nextPage = () => {
 }
 
 .pagination button:not(:disabled):hover {
-  background-color: #0056b3;
+  background-color: #B00101;
 }
 
 .pagination span {
@@ -138,7 +138,7 @@ const nextPage = () => {
 }
 
 .pagination button:active {
-  background-color: #0056b3;
+  background-color: #B00101;
 }
 
 .card{

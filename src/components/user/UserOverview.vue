@@ -5,7 +5,7 @@
     <div v-else-if="error">{{ error }}</div>
     <div class="user-list">
       <div
-          v-for="user in users"
+          v-for="user in paginatedUsers"
           :key="user.id"
           class="user-card"
       >
@@ -18,7 +18,7 @@
           <img
               v-if="user.profilePictureUrl"
               :src="user.profilePictureUrl"
-              alt="User Profile Picture"
+              :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'"
               class="profile-picture"
           />
           <!-- Otherwise, display the placeholder image -->
@@ -31,20 +31,27 @@
           <div class="username">{{ user.userName }}</div>
         </router-link>
       </div>
+      <div class="pagination-controls text-center">
+        <button class="btn-primary" @click="prevPage" :disabled="currentPage === 1">Previous</button>
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="btn-tertiary" @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
-import { API_ROUTES } from '@/apiRoutes.js'; // Ensure this file has the correct routes
+import { API_ROUTES } from '@/apiRoutes.js';
 
-const users = ref([]);        // Array to hold users data
-const loading = ref(true);     // Loading state
-const error = ref(null);       // Error state
+const users = ref([]);         // Array to hold all users
+const loading = ref(true);      // Loading state
+const error = ref(null);        // Error state
+const currentPage = ref(1);     // Current page number
+const pageSize = 2;            // Number of users per page
 
-// Function to fetch all users
+// Function to fetch users
 async function fetchUsers() {
   try {
     const response = await axios.get(API_ROUTES.USERS, { withCredentials: true });
@@ -55,34 +62,59 @@ async function fetchUsers() {
       user.profilePictureUrl = await fetchUserProfilePicture(user.profilePictureId);
     }
 
-    users.value = fetchedUsers; // Store the fetched users with their picture URLs
+    users.value = fetchedUsers;
   } catch (err) {
     error.value = 'Failed to fetch users: ' + err.message;
   } finally {
-    loading.value = false; // Set loading to false when request is done
+    loading.value = false;
   }
 }
 
-// Function to fetch the user profile picture
+// Function to fetch user profile picture
 async function fetchUserProfilePicture(profilePictureId) {
-  if (!profilePictureId) return null; // No profile picture available
+  if (!profilePictureId) return null;
 
   try {
     const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${profilePictureId}`, {
       responseType: 'blob',
     });
-
-    // Create a URL for the profile picture blob
     return URL.createObjectURL(pictureResponse.data);
   } catch (error) {
     console.error('Error fetching profile picture:', error);
-    return null; // Return null in case of error
+    return null;
+  }
+}
+
+// Computed property for paginated users
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  const end = start + pageSize;
+  return users.value.slice(start, end);
+});
+
+// Total pages computed based on users length
+const totalPages = computed(() => {
+  return Math.ceil(users.value.length / pageSize);
+});
+
+// Go to the previous page
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+}
+
+// Go to the next page
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
   }
 }
 
 // Fetch users on component mount
 onMounted(fetchUsers);
 </script>
+
 
 <style scoped>
 .user-list {
@@ -115,5 +147,26 @@ onMounted(fetchUsers);
 .username {
   margin-top: 10px;
   font-weight: bold;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+button {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+  color: black;
 }
 </style>
