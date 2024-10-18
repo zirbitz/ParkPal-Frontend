@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import axios from 'axios';
 import { fetchUserData } from "@/service/authService.js";
 import { useRouter } from 'vue-router';
@@ -38,16 +38,135 @@ const formData = ref({
 
 });
 
+const showErrorPopup = ref(false);
+const titleValidationMessage = ref('');
+const descriptionValidationMessage = ref('');
+const startDateValidationMessage = ref('');
+const endDateValidationMessage = ref('');
+const startTimeValidationMessage = ref('');
+const endTimeValidationMessage = ref('');
+
+// Validation for Title
+const isTitleValid = computed(() => {
+  if (formData.value.title.trim() === '') {
+    titleValidationMessage.value = 'Title is required.';
+    return false;
+  }
+  titleValidationMessage.value = '';
+  return true;
+});
+
+// Validation for Description
+const isDescriptionValid = computed(() => {
+  if (formData.value.description.trim() === '') {
+    descriptionValidationMessage.value = 'Description is required.';
+    return false;
+  }
+  descriptionValidationMessage.value = '';
+  return true;
+});
+
+// Validate Park Selection
+const isParkSelected = computed(() => {
+  if (!selectedParkId.value) {
+    return false; // or set a message if necessary
+  }
+  return true;
+});
+
+const now = new Date();
+
+// Validate Start Date
+const isStartDateValid = computed(() => {
+  if (!formData.value.startDate) {
+    startDateValidationMessage.value = 'Start date is required.';
+    return false;
+  }
+  startDateValidationMessage.value = '';
+  return true;
+});
+
+// Validate End Date
+const isEndDateValid = computed(() => {
+  if (!formData.value.endDate) {
+    endDateValidationMessage.value = 'End date is required.';
+    return false;
+  }
+
+  const start = new Date(formData.value.startDate);
+  const end = new Date(formData.value.endDate);
+
+  if (end < start) {
+    endDateValidationMessage.value = 'End date must be the same or after the start date.';
+    return false;
+  }
+
+  const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+  if (end > oneYearFromNow) {
+    endDateValidationMessage.value = 'End date cannot be more than 1 year in the future.';
+    return false;
+  }
+
+  endDateValidationMessage.value = '';
+  return true;
+});
+
+// Validate Start Time
+const isStartTimeValid = computed(() => {
+  if (!formData.value.startTime) {
+    startTimeValidationMessage.value = 'Start time is required.';
+    return false;
+  }
+
+  if (!isStartDateValid.value) {
+    startTimeValidationMessage.value = '';
+    return false;
+  }
+
+  return formData.value.startTime !== '' && startDateValidationMessage.value === '';
+});
+
+// Validate End Time
+const isEndTimeValid = computed(() => {
+  if (!formData.value.endTime) {
+    endTimeValidationMessage.value = 'End time is required.';
+    return false;
+  }
+
+  const start = new Date(`${formData.value.startDate}T${formData.value.startTime}`);
+  const end = new Date(`${formData.value.endDate}T${formData.value.endTime}`);
+  const duration = (end - start) / (1000 * 60); // Duration in minutes
+
+  if (end <= start) {
+    endTimeValidationMessage.value = 'End time must be after start time.';
+    return false;
+  }
+  if (duration < 30) {
+    endTimeValidationMessage.value = 'Duration must be at least 30 minutes.';
+    return false;
+  }
+
+  endTimeValidationMessage.value = '';
+  return true;
+});
+
 const fetchEventData = async () => {
   try {
     const response = await axios.get(API_ROUTES.EVENTS_BY_ID(props.eventId), { withCredentials: true });
     const event = response.data;
+
+    // Extract date and time from startTS and endTS
+    const startDateTime = new Date(event.startTS);
+    const endDateTime = new Date(event.endTS);
+
     formData.value = {
       eventId: event.eventId,
       title: event.title,
       description: event.description,
-      startTS: event.startTS,
-      endTS: event.endTS,
+      startDate: startDateTime.toISOString().split('T')[0], // Date part
+      startTime: startDateTime.toISOString().split('T')[1].substring(0, 5), // Time part
+      endDate: endDateTime.toISOString().split('T')[0], // Date part
+      endTime: endDateTime.toISOString().split('T')[1].substring(0, 5), // Time part
       parkId: event.parkId,
       creatorUserId: event.creatorUserId,
       joinedUserIds: event.joinedUserIds,
@@ -206,6 +325,24 @@ const isTagSelected = (tag) => selectedTags.value.has(tag);
 const submitForm = async (event) => {
   event.preventDefault();
 
+  if (
+      !isTitleValid.value ||
+      !isDescriptionValid.value ||
+      !isStartTimeValid.value ||
+      !isEndTimeValid.value ||
+      !isEndDateValid.value ||
+      !isStartDateValid.value ||
+      !isStartTimeValid.value ||
+      !isParkSelected.value
+  ) {
+    showErrorPopup.value = true;
+    setTimeout(() => {
+      showErrorPopup.value = false;
+    }, 3000);
+    window.scrollTo(0, 0);
+    return;
+  }
+
   try {
     if (mediaFiles.value.length > 0) {
       await uploadMediaFiles();
@@ -220,6 +357,10 @@ const submitForm = async (event) => {
     formData.value.creatorUserId = userData.id;
     formData.value.creatorName = userData.name;
 
+    // Combine the separate date and time into one timestamp
+    const startTS = new Date(`${formData.value.startDate}T${formData.value.startTime}`);
+    const endTS = new Date(`${formData.value.endDate}T${formData.value.endTime}`);
+
     // Combine existing and newly uploaded media external IDs
     const allMediaExternalIds = [
       ...existingMediaExternalIds.value,  // Old media IDs from the event
@@ -230,8 +371,8 @@ const submitForm = async (event) => {
       id: props.eventId,
       title: formData.value.title,
       description: formData.value.description,
-      startTS: formData.value.startTS,
-      endTS: formData.value.endTS,
+      startTS: startTS.toISOString(),
+      endTS: endTS.toISOString(),
       parkId: selectedParkId.value,
       creatorUserId: formData.value.creatorUserId,
       creatorName: formData.value.creatorName,
@@ -245,12 +386,12 @@ const submitForm = async (event) => {
 
     const response = await axios.put(API_ROUTES.EVENTS_BY_ID(props.eventId), updatedEvent, { withCredentials: true });
 
-    console.log('Event updated successfully:', response.data);
-
+    // Show the success popup and hide it after 3 seconds
     showSuccessPopup.value = true;
     setTimeout(() => {
       showSuccessPopup.value = false;
-    }, 3000);
+    }, 3000); // Hide popup after 3 seconds
+    window.scrollTo(0, 0);
 
   } catch (error) {
     console.error('Error updating event:', error.response?.data || error.message);
@@ -265,28 +406,63 @@ const submitForm = async (event) => {
   <div class="container mt-4">
     <h1 class="text-center">Update Event</h1>
     <hr>
-    <form id="updateEventForm" @submit.prevent="submitForm">
+    <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
+      Enter all the required fields.
+    </div>
+    <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
+      Event successfully created
+    </div>
+    <form id="updateEventForm" @submit.prevent="submitForm" novalidate>
+      <!-- Event Title -->
       <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
-        <input type="text" class="form-control" id="title" v-model="formData.title" required>
+        <input type="text" class="form-control" id="title" v-model="formData.title" :class="{ 'is-invalid': !isTitleValid }">
+        <p v-if="!isTitleValid" class="text-danger">{{ titleValidationMessage }}</p> <!-- Validation Message -->
       </div>
+
+      <!-- Event Description -->
       <div class="mb-3">
         <label for="description" class="form-label">Event Description</label>
-        <textarea class="form-control" id="description" v-model="formData.description" rows="3" required></textarea>
+        <textarea class="form-control" id="description" v-model="formData.description" rows="3" :class="{ 'is-invalid': !isDescriptionValid }"></textarea>
+        <p v-if="!isDescriptionValid" class="text-danger">{{ descriptionValidationMessage }}</p> <!-- Validation Message -->
       </div>
+
+      <!-- Start Date -->
+      <div class="mb-3">
+        <label for="startDate" class="form-label">Start Date</label>
+        <input type="date" class="form-control" id="startDate" v-model="formData.startDate" :class="{ 'is-invalid': !isStartDateValid }">
+        <p v-if="!isStartDateValid" class="text-danger">{{ startDateValidationMessage }}</p>
+      </div>
+
+      <!-- Start Time -->
       <div class="mb-3">
         <label for="startTime" class="form-label">Start Time</label>
-        <input type="datetime-local" class="form-control" id="startTime" v-model="formData.startTS" required>
+        <input type="time" class="form-control" id="startTime" v-model="formData.startTime" :class="{ 'is-invalid': !isStartTimeValid }">
+        <p v-if="!isStartTimeValid" class="text-danger">Please select a start time.</p>
       </div>
+
+      <!-- End Date -->
       <div class="mb-3">
-        <label for="lastTime" class="form-label">End Time</label>
-        <input type="datetime-local" class="form-control" id="lastTime" v-model="formData.endTS" required>
+        <label for="endDate" class="form-label">End Date</label>
+        <input type="date" class="form-control" id="endDate" v-model="formData.endDate" :class="{ 'is-invalid': !isEndDateValid }">
+        <p v-if="!isEndDateValid" class="text-danger">{{ endDateValidationMessage }}</p>
       </div>
+
+      <!-- End Time -->
+      <div class="mb-3">
+        <label for="endTime" class="form-label">End Time</label>
+        <input type="time" class="form-control" id="endTime" v-model="formData.endTime" :class="{ 'is-invalid': !isEndTimeValid }">
+        <p v-if="!isEndTimeValid" class="text-danger">{{ endTimeValidationMessage }}</p>
+      </div>
+
+      <!-- Select Park -->
       <div class="mb-3">
         <label for="park" class="form-label">Select Park</label>
-        <select class="form-select" id="park" v-model="selectedParkId" required>
+        <select class="form-select" id="park" v-model="selectedParkId" :class="{ 'is-invalid': !isParkSelected }">
+          <option value="" disabled>Select a park</option>
           <option v-for="park in parks" :key="park.id" :value="park.id">{{ park.name }}</option>
         </select>
+        <p v-if="!isParkSelected" class="text-danger">Please select a park.</p> <!-- Validation Message -->
       </div>
       <div class="mb-3">
         <label for="eventMedia" class="form-label">Event Media (Attachments)</label>

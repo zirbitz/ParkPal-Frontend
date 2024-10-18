@@ -15,6 +15,15 @@ const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
 // Calculate start date and time (1 hour from now)
 // Get the current date and time
+
+// Validation Computed Properties
+const isTitleValid = computed(() => title.value.trim() !== '');
+const isDescriptionValid = computed(() => description.value.trim() !== '');
+const isParkSelected = computed(() => !!selectedParkId.value);
+
+// Reactive state for the error popup
+const showErrorPopup = ref(false);
+
 const now = new Date();
 
 const startDate = ref(now.toISOString().split('T')[0]);
@@ -25,10 +34,91 @@ const endDateTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 const endDate = ref(endDateTime.toISOString().split('T')[0]);
 const endTime = ref(endDateTime.toISOString().split('T')[1].substring(0, 5));
 
+// Validation messages
+const startDateValidationMessage = ref('');
+const endDateValidationMessage = ref('');
+const endTimeValidationMessage = ref('');
+const startTimeValidationMessage = ref('');
+
 // Construct startTS using reactive properties
 // Construct startTS and endTS using reactive properties
 const startTS = computed(() => `${startDate.value}T${startTime.value}`);
 const endTS = computed(() => `${endDate.value}T${endTime.value}`);
+
+
+// Validate Start Date
+const isStartDateValid = computed(() => {
+  if (!startDate.value) {
+    startDateValidationMessage.value = 'Start date is required.';
+    return false;
+  }
+  startDateValidationMessage.value = '';
+  return true;
+});
+
+// Validate End Date
+const isEndDateValid = computed(() => {
+  if (!endDate.value) {
+    endDateValidationMessage.value = 'End date is required.';
+    return false;
+  }
+
+  const start = new Date(startDate.value);
+  const end = new Date(endDate.value);
+
+  if (end < start) {
+    endDateValidationMessage.value = 'End date must be the same or after the start date.';
+    return false;
+  }
+
+  const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+  if (end > oneYearFromNow) {
+    endDateValidationMessage.value = 'End date cannot be more than 1 year in the future.';
+    return false;
+  }
+
+  endDateValidationMessage.value = '';
+  return true;
+});
+
+// Validate Start Time
+const isStartTimeValid = computed(() => {
+  if (!startTime.value) {
+    startTimeValidationMessage.value = 'Start time is required.';
+    return false;
+  }
+
+  if (!isStartDateValid.value) {
+    startTimeValidationMessage.value = '';
+    return false;
+  }
+
+  return startTime.value !== '' && startDateValidationMessage.value === '';
+});
+
+// Validate End Time
+const isEndTimeValid = computed(() => {
+  if (!endTime.value) {
+    endTimeValidationMessage.value = 'End time is required.';
+    return false;
+  }
+
+  const start = new Date(`${startDate.value}T${startTime.value}`);
+  const end = new Date(`${endDate.value}T${endTime.value}`);
+  const duration = (end - start) / (1000 * 60); // Duration in minutes
+
+  if (end <= start) {
+    endTimeValidationMessage.value = 'End time must be after start time.';
+    return false;
+  }
+  if (duration < 30) {
+    endTimeValidationMessage.value = 'Duration must be at least 30 minutes.';
+    return false;
+  }
+
+  endTimeValidationMessage.value = '';
+  return true;
+});
 
 const title = ref('');
 const description = ref('');
@@ -163,6 +253,17 @@ const isTagSelected = (tag) => selectedTags.value.has(tag);
 const submitForm = async (event) => {
   event.preventDefault();
 
+  // Check if any field is invalid
+  if (!isTitleValid.value || !isDescriptionValid.value || !isStartDateValid.value || !isStartTimeValid.value || !isEndDateValid.value || !isEndTimeValid.value || !isParkSelected.value) {
+
+    showErrorPopup.value = true;
+    setTimeout(() => {
+      showErrorPopup.value = false;
+    }, 3000);
+    window.scrollTo(0, 0);
+    return;
+  }
+
   try {
     // First, upload media files
     await uploadMediaFiles();
@@ -211,6 +312,7 @@ const submitForm = async (event) => {
     setTimeout(() => {
       showSuccessPopup.value = false;
     }, 3000); // Hide popup after 3 seconds
+    window.scrollTo(0, 0);
 
   } catch (error) {
     console.error('Error creating event:', error.response?.data || error.message);
@@ -223,37 +325,64 @@ const submitForm = async (event) => {
   <div class="container mt-4">
     <h1 class="text-center">Create Event</h1>
     <hr>
+    <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
+      Enter all the required fields.
+    </div>
+    <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
+      Event successfully created
+    </div>
     <form id="editEventForm" @submit.prevent="submitForm">
-    <div class="mb-3">
+      <!-- Event Title -->
+      <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
-        <input type="text" class="form-control" id="title" v-model="title" required>
+        <input type="text" class="form-control" id="title" v-model="title" :class="{ 'is-invalid': !isTitleValid }">
+        <p v-if="!isTitleValid" class="text-danger">Event title is required.</p>
       </div>
+
+      <!-- Event Description -->
       <div class="mb-3">
         <label for="description" class="form-label">Event Description</label>
-        <textarea class="form-control" id="description" v-model="description" rows="3" required></textarea>
+        <textarea class="form-control" id="description" v-model="description" rows="3" :class="{ 'is-invalid': !isDescriptionValid }"></textarea>
+        <p v-if="!isDescriptionValid" class="text-danger">Event description is required.</p>
       </div>
+
+      <!-- Start Date -->
       <div class="mb-3">
         <label for="startDate" class="form-label">Start Date</label>
-        <input type="date" class="form-control" id="startDate" v-model="startDate" required>
+        <input type="date" class="form-control" id="startDate" v-model="startDate" :class="{ 'is-invalid':!isStartDateValid }">
+        <p v-if="startDateValidationMessage" class="text-danger">{{ startDateValidationMessage }}</p>
       </div>
+
+      <!-- Start Time -->
       <div class="mb-3">
         <label for="startTime" class="form-label">Start Time</label>
-        <input type="time" class="form-control" id="startTime" v-model="startTime" required>
+        <input type="time" class="form-control" id="startTime" v-model="startTime" :class="{ 'is-invalid': !isStartTimeValid }">
+        <p v-if="!isStartTimeValid" class="text-danger">{{ startTimeValidationMessage }}</p>
       </div>
+
+      <!-- End Date -->
       <div class="mb-3">
         <label for="endDate" class="form-label">End Date</label>
-        <input type="date" class="form-control" id="endDate" v-model="endDate" required>
+        <input type="date" class="form-control" id="endDate" v-model="endDate" :class="{ 'is-invalid': !isEndDateValid }">
+        <p v-if="!isEndDateValid" class="text-danger">{{ endDateValidationMessage }}</p>
       </div>
+
+      <!-- End Time -->
       <div class="mb-3">
         <label for="endTime" class="form-label">End Time</label>
-        <input type="time" class="form-control" id="endTime" v-model="endTime" required>
+        <input type="time" class="form-control" id="endTime" v-model="endTime" :class="{ 'is-invalid': !isEndTimeValid}">
+        <p v-if="!isEndTimeValid" class="text-danger">{{ endTimeValidationMessage }}</p>
       </div>
+
+      <!-- Park -->
       <div class="mb-3">
         <label for="park" class="form-label">Select Park</label>
-        <select class="form-select" id="park" v-model="selectedParkId" required>
+        <select class="form-select" id="park" v-model="selectedParkId" :class="{ 'is-invalid': !isParkSelected }">
           <option v-for="park in parks" :key="park.id" :value="park.id">{{ park.name }}</option>
         </select>
+        <p v-if="!isParkSelected" class="text-danger">{{ startTimeValidationMessage }}</p>
       </div>
+
       <div class="mb-3">
         <label for="eventMedia" class="form-label">List of Event Media (Attachments)</label>
         <div class="input-group mb-3 custom-width-input">
@@ -311,12 +440,6 @@ const submitForm = async (event) => {
 
       <button type="submit" class="btn btn-primary">Create Event</button>
     </form>
-
-    <div v-if="showSuccessPopup" class="popup">
-      <div class="popup-content">
-        <p>Event created successfully!</p>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -389,4 +512,5 @@ const submitForm = async (event) => {
 .table-borderless td, .table-borderless th {
   border: none;
 }
+
 </style>

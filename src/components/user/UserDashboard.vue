@@ -50,6 +50,9 @@ const isCountryValid = computed(() => country.value !== '');
 const isSalutationValid = computed(() => salutation.value.trim() !== '');
 const isGenderValid = computed(() => gender.value !== '');
 
+// Reactive state for the error popup
+const showErrorPopup = ref(false);
+
 const fetchUserProfileAndEvents = async () => {
   try {
     // Fetch the logged-in user's profile
@@ -164,6 +167,25 @@ const updateEvent = (index) => {
 
 // Update profile (including profile picture upload if applicable)
 const updateProfile = async () => {
+
+  if (
+      !isFirstNameValid.value ||
+      !isLastNameValid.value ||
+      !isEmailValid.value ||
+      !isUsernameValid.value ||
+      !isCountryValid.value ||
+      !isSalutationValid.value ||
+      !isGenderValid.value
+  ) {
+    // Show error message or handle invalid input
+    showErrorPopup.value = true;
+    setTimeout(() => {
+      showErrorPopup.value = false;
+    }, 3000);
+    window.scrollTo(0, 0);
+    return;
+  }
+
   try {
     let newProfilePictureId = profilePictureId.value;
 
@@ -211,6 +233,7 @@ const updateProfile = async () => {
 
     setTimeout(() => {
       showFlashMessage.value = false;
+      showSuccessPopup.value = false;
     }, 3000);
   } catch (error) {
     console.error('Failed to update profile:', error);
@@ -265,6 +288,9 @@ onMounted(async () => {
   <div class="container">
     <h1>My UserProfile</h1>
     <hr>
+    <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
+      Enter all the required fields.
+    </div>
     <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
       Profile updated successfully
     </div>
@@ -272,8 +298,7 @@ onMounted(async () => {
       <div class="row">
         <div class="col-12 col-md-6">
           <h2>User Profile</h2>
-          <form @submit.prevent="validateAndUpdateProfile">
-
+          <form  @submit.prevent="updateProfile">
             <div class="mb-3">
               <label for="profilePicture" class="form-label">Profile Picture</label>
               <div class="mt-3">
