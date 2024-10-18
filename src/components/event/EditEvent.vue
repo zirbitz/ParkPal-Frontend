@@ -258,9 +258,6 @@ const submitForm = async (event) => {
 };
 </script>
 
-
-
-
 <template>
   <div class="container mt-4">
     <h1 class="text-center">Update Event</h1>
@@ -322,7 +319,6 @@ const submitForm = async (event) => {
     </form>
   </div>
 </template>
-
 
 <style scoped>
 .custom-width-input {

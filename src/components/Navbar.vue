@@ -61,7 +61,7 @@
                   v-if="profilePictureUrl"
                   class="rounded-circle"
                   :src="profilePictureUrl"
-                  alt="Profile Picture"
+                  :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'"
                   width="40"
                   height="40"
               />
@@ -87,6 +87,7 @@ const authStatus = ref({
 });
 
 const profilePictureUrl = ref(null);
+const user = ref(null);
 
 // Function to fetch user data by userId
 async function fetchUserById(userId) {
@@ -116,6 +117,7 @@ async function fetchAuthStatus() {
       if (userId) {
         // Fetch full user data by userId
         const fullUserData = await fetchUserById(userId);
+        user.value = fullUserData;
 
         // Check if the profilePictureId exists and fetch the profile picture
         if (fullUserData && fullUserData.profilePictureId) {

@@ -49,6 +49,7 @@ const routes = [
         name: 'ParksOverview',
         component: ParksOverview,
         meta: { requiresAuth: true },
+        props: true
     },
     {
         path: '/createpark',
