@@ -62,6 +62,12 @@ const isDescriptionValid = computed(() => {
     descriptionValidationMessage.value = 'Description is required.';
     return false;
   }
+
+  if (formData.value.description.length > 1000) {
+    descriptionValidationMessage.value = 'Description must be under 1000 characters.';
+    return false
+  }
+
   descriptionValidationMessage.value = '';
   return true;
 });
@@ -399,9 +405,6 @@ const submitForm = async (event) => {
 };
 </script>
 
-
-
-
 <template>
   <div class="container mt-4">
     <h1 class="text-center">Update Event</h1>
@@ -498,7 +501,6 @@ const submitForm = async (event) => {
     </form>
   </div>
 </template>
-
 
 <style scoped>
 .custom-width-input {

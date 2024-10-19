@@ -1,5 +1,5 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 import axios from 'axios';
 import {fetchUserData} from "@/service/authService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -13,12 +13,9 @@ const createMediaFileIds = ref([]); // To store the IDs of uploaded media files
 const parks = ref([]); // Store the list of parks
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
-// Calculate start date and time (1 hour from now)
-// Get the current date and time
 
 // Validation Computed Properties
 const isTitleValid = computed(() => title.value.trim() !== '');
-const isDescriptionValid = computed(() => description.value.trim() !== '');
 const isParkSelected = computed(() => !!selectedParkId.value);
 
 // Reactive state for the error popup
@@ -35,16 +32,63 @@ const endDate = ref(endDateTime.toISOString().split('T')[0]);
 const endTime = ref(endDateTime.toISOString().split('T')[1].substring(0, 5));
 
 // Validation messages
+const descriptionValidationMessage = ref('');
 const startDateValidationMessage = ref('');
 const endDateValidationMessage = ref('');
 const endTimeValidationMessage = ref('');
 const startTimeValidationMessage = ref('');
+const tagValidationMessage = ref('');
 
 // Construct startTS using reactive properties
 // Construct startTS and endTS using reactive properties
 const startTS = computed(() => `${startDate.value}T${startTime.value}`);
 const endTS = computed(() => `${endDate.value}T${endTime.value}`);
 
+const isTagValid = computed(() => {
+  const tag = customTagInput.value.trim();
+
+  // Skip validation if the input is empty (but do not allow empty tag addition)
+  if (tag === '') {
+    tagValidationMessage.value = '';
+    return true;
+  }
+
+  // Check if the tag length is between 3 and 50 characters
+  if (tag.length < 3 || tag.length > 50) {
+    tagValidationMessage.value = 'Tag must be between 3 and 50 characters long.';
+    return false;
+  }
+
+  // Check if the custom tag already exists in the available tags or selected tags
+  const tagExistsInAvailableTags = availableTags.value.some(t => t.name.toLowerCase() === tag.toLowerCase());
+  const tagExistsInSelectedTags = Array.from(selectedTags.value).some(selectedTag => {
+    const foundTag = availableTags.value.find(t => t.id === selectedTag);
+    return foundTag && foundTag.name.toLowerCase() === tag.toLowerCase();
+  });
+
+  if (tagExistsInAvailableTags || tagExistsInSelectedTags) {
+    tagValidationMessage.value = 'This tag already exists or has already been selected.';
+    return false;
+  }
+
+  tagValidationMessage.value = '';
+  return true;
+});
+
+const isDescriptionValid = computed(() => {
+  if (description.value.trim() === '') {
+    descriptionValidationMessage.value = 'Description is required.';
+    return false;
+  }
+
+  if (description.value.length > 1000) {
+    descriptionValidationMessage.value = 'Description must be under 1000 characters.';
+    return false
+  }
+
+  descriptionValidationMessage.value = '';
+  return true;
+});
 
 // Validate Start Date
 const isStartDateValid = computed(() => {
@@ -234,10 +278,19 @@ const toggleTagSelection = (tagId) => {
 // Add custom tag
 const addCustomTag = () => {
   const tag = customTagInput.value.trim();
-  if (tag && !Array.from(selectedTags.value).includes(tag)) {
-    selectedTags.value.add(tag); // Add the custom tag to selectedTags
-    customTagInput.value = '';   // Clear the input field
+
+  if (tag === '') {
+    tagValidationMessage.value = 'Tag must be between 3 and 50 characters long.';
+    return;
   }
+
+  if (!isTagValid.value) {
+
+    return;
+  }
+
+  selectedTags.value.add(tag);
+  customTagInput.value = '';
 };
 
 const getTagName = (tag) => {
@@ -254,7 +307,13 @@ const submitForm = async (event) => {
   event.preventDefault();
 
   // Check if any field is invalid
-  if (!isTitleValid.value || !isDescriptionValid.value || !isStartDateValid.value || !isStartTimeValid.value || !isEndDateValid.value || !isEndTimeValid.value || !isParkSelected.value) {
+  if (!isTitleValid.value ||
+      !isDescriptionValid.value ||
+      !isStartDateValid.value ||
+      !isStartTimeValid.value ||
+      !isEndDateValid.value ||
+      !isEndTimeValid.value ||
+      !isParkSelected.value) {
 
     showErrorPopup.value = true;
     setTimeout(() => {
@@ -394,7 +453,7 @@ const submitForm = async (event) => {
               accept=".jpg, .png, .gif"
               @change="handleFileSelection"
           >
-          <button class="btn btn-outline-secondary" type="button" @click="removeAllMediaFiles">
+          <button class="btn btn-tertiary" type="button" @click="removeAllMediaFiles">
             Remove All
           </button>
         </div>
@@ -425,8 +484,26 @@ const submitForm = async (event) => {
 
         <!-- Custom Tag Input -->
         <div class="mt-2">
-          <input type="text" v-model="customTagInput" placeholder="Add custom tag" class="form-control mb-2">
-          <button type="button" class="btn btn-secondary" @click="addCustomTag">Add Tag</button>
+          <!-- Tag Input Field -->
+          <input
+              type="text"
+              v-model="customTagInput"
+              placeholder="Add custom tag"
+              class="form-control mb-2"
+              :class="{ 'is-invalid': !isTagValid}"
+          />
+
+          <!-- Validation Error Message -->
+          <p v-if="!isTagValid> 0" class="text-danger">{{ tagValidationMessage }}</p>
+
+          <!-- Add Tag Button -->
+          <button
+              type="button"
+              class="btn btn-secondary"
+              @click="addCustomTag"
+          >
+            Add Tag
+          </button>
         </div>
 
         <!-- Display selected tags -->
@@ -438,7 +515,7 @@ const submitForm = async (event) => {
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary">Create Event</button>
+      <button type="submit" class="btn btn-primary mb-5" @keydown.enter.prevent>Create Event</button>
     </form>
   </div>
 </template>
@@ -513,4 +590,19 @@ const submitForm = async (event) => {
   border: none;
 }
 
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+}
+.modal-body{
+  border: red;
+}
+.modal {
+  z-index: 5000;
+}
 </style>

@@ -304,7 +304,7 @@ onMounted(async () => {
               <div class="mt-3">
                 <!-- Show the profile picture if available -->
                 <div v-if="profilePictureUrl">
-                  <img :src="profilePictureUrl" alt="Profile Picture" class="img-thumbnail" width="150">
+                  <img :src="profilePictureUrl" :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'" class="img-thumbnail" width="150">
                   <button type="button" class="btn btn-danger mt-2" @click="resetProfilePicture">Delete Picture</button>
                 </div>
                 <!-- Show error message if there's an error fetching the profile picture -->

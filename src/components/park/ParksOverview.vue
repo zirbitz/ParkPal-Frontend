@@ -195,4 +195,11 @@ const filteredParks = computed(() => {
   box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.8);
 }
 
+.btn-outline-success{
+  color: #056105;
+}
+.btn-outline-success:hover{
+  color: white;
+  background: #00e300;
+}
 </style>

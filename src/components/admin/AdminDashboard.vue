@@ -12,6 +12,8 @@ const currentPage = ref(1);
 const eventPage = ref(1); // Separate current page for events
 const itemsPerPage = 5; // Adjust number of items per page for users
 const eventsPerPage = 2; // Set number of events per page to 2
+const mediaFiles = ref([]);
+const filesPerPage = 5;
 
 // Search-related state
 const searchQuery = ref(""); // Store the search query
@@ -39,6 +41,12 @@ const paginatedEvents = computed(() => {
   const start = (eventPage.value - 1) * eventsPerPage;
   return events.value.slice(start, start + eventsPerPage);
 });
+const paginatedFiles = computed(() => {
+  const start = (currentPage.value - 1) * filesPerPage;
+  return mediaFiles.value.slice(start, start + filesPerPage);
+});
+
+
 
 // Fetch users and events on component mount
 const fetchUsers = async () => {
@@ -49,6 +57,76 @@ const fetchUsers = async () => {
     console.error("Error fetching users:", error);
   }
 };
+
+// TODO: get Userdata from here to work bc users.value is empty but users are not!
+const fetchMediaFiles = async () => {
+  try {
+    console.log(users)
+    console.log(users.value)
+
+    // Extract unique media file IDs from both mediaIds and profilePictureIds, flattening and removing duplicates
+    const mediaIds = [...new Set(
+        users.value
+            .map(user => [
+              ...(user.mediaIds || []), // Safely include mediaIds array
+              user.profilePictureId || null // Include profilePictureId only if it exists
+            ])
+            .reduce((acc, curr) => acc.concat(curr), []) // Flatten the array
+            .filter(id => id) // Filter out null or undefined values
+    )];
+
+    if (mediaIds.length === 0) {
+      console.log("No media IDs found for any user.");
+      mediaFiles.value = [];
+      return;
+    }
+
+    // Fetch media files for each ID with response type 'blob' to handle binary data like images
+    const mediaRequests = mediaIds.map(id =>
+        axios.get(`http://localhost:8080/files/${id}`, {
+          responseType: 'blob', // Ensure the response is a binary blob
+          withCredentials: true // Include credentials if needed (cookies or auth headers)
+        })
+    );
+
+    const mediaResponses = await Promise.all(mediaRequests);
+
+
+    mediaFiles.value = mediaResponses.map((res, index) => ({
+      id: mediaIds[index], // Storing the corresponding file ID
+      url: URL.createObjectURL(res.data),
+      mimeType: res.headers['content-type']
+    }));
+
+  } catch (error) {
+    console.error("Error fetching media files:", error);
+  }
+};
+const isImage = (mimeType) => {
+  return mimeType.startsWith('image/');
+};
+
+const isVideo = (mimeType) => {
+  return mimeType.startsWith('video/');
+};
+
+const deleteFile = async (index) => {
+  try {
+    // Assume that media file URLs have the file ID embedded or another way to reference the file.
+    const file = paginatedFiles.value[index];
+
+    // Extract the file ID from the URL or store it when fetching the files earlier
+    const fileId = file.id; // This assumes you stored the ID in the file object when fetching mediaFiles
+
+    await axios.delete(`http://localhost:8080/files/${fileId}`, { withCredentials: true });
+
+    mediaFiles.value = mediaFiles.value.filter((_, i) => i !== index);
+    console.log("File deleted successfully");
+  } catch (error) {
+    console.error("Error deleting file:", error);
+  }
+};
+
 
 const fetchEvents = async () => {
   try {
@@ -144,9 +222,10 @@ const clearSearch = () => {
 };
 
 // Fetch users and events when component is mounted
-onMounted(() => {
-  fetchUsers();
-  fetchEvents(); // Fetch events as well
+onMounted(async () => {
+  await fetchUsers();  // Ensure users are fetched first
+  fetchMediaFiles();   // Now call fetchMediaFiles after users are loaded
+  fetchEvents();       // Fetch events as usual
 });
 </script>
 
@@ -208,41 +287,47 @@ onMounted(() => {
           <p class="card-text">All files uploaded by Users:</p>
 
           <div id="app">
-            <table class="table table-bordered">
-              <thead>
-              <tr>
-                <th>Preview</th>
-                <th>File Name</th>
-                <th>Action</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="(file, index) in paginatedFiles" :key="index">
-                <td>
-                  <img v-if="isImage(file)" :src="file.url" class="img-thumbnail" width="100">
-                  <video v-if="isVideo(file)" :src="file.url" class="video-preview" width="100" controls></video>
-                </td>
-                <td>{{ file.name }}</td>
-                <td>
-                  <button class="btn btn-danger btn-sm" @click="deleteFile(index)">Delete</button>
-                </td>
-              </tr>
-              </tbody>
-            </table>
-            <nav aria-label="Page navigation">
-              <ul class="pagination justify-content-center">
-                <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                  <button class="page-link" @click="prevPage">Previous</button>
-                </li>
-                <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }">
-                  <button class="page-link" @click="goToPage(page)">{{ page }}</button>
-                </li>
-                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                  <button class="page-link" @click="nextPage">Next</button>
-                </li>
-              </ul>
-            </nav>
+            <div v-if="paginatedFiles.length === 0" class="alert alert-info">
+              No files available.
+            </div>
+            <div v-else>
+              <table class="table table-bordered">
+                <thead>
+                <tr>
+                  <th>Preview</th>
+                  <th>File Type</th>
+                  <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(file, index) in paginatedFiles" :key="index">
+                  <td>
+                    <img v-if="isImage(file.mimeType)" :src="file.url" class="img-thumbnail" width="100" alt="File Preview">
+                    <video v-if="isVideo(file.mimeType)" :src="file.url" class="video-preview" width="100" controls></video>
+                  </td>
+                  <td>{{ file.mimeType }}</td>
+                  <td>
+                    <button class="btn btn-danger btn-sm" @click="deleteFile(index)">Delete</button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+              <nav aria-label="File page navigation">
+                <ul class="pagination justify-content-center">
+                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <button class="page-link" @click="prevPage">Previous</button>
+                  </li>
+                  <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }">
+                    <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                  </li>
+                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                    <button class="page-link" @click="nextPage">Next</button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -281,13 +366,8 @@ onMounted(() => {
                 <td>{{ user.userName }}</td> <!-- Changed to match userName from UserDto -->
                 <td><a :href="'mailto:' + user.email" target="_blank">{{ user.email }}</a></td>
                 <td>
-                  <button class="btn btn-danger btn-sm" @click="deleteUser(index)">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 20V19C4 16.2386 6.23858 14 9 14H12.75M16 15L18.5 17.5M18.5 17.5L21 20M18.5 17.5L21 15M18.5 17.5L16 20M15 7C15 9.20914 13.2091 11 11 11C8.79086 11 7 9.20914 7 7C7 4.79086 8.79086 3 11 3C13.2091 3 15 4.79086 15 7Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                    Delete
-                  </button>
+                  <button class="btn btn-danger btn-sm" @click="deleteUser(index)">Delete</button>
                   <button class="btn btn-warning btn-sm ms-2" @click="lockUser(index)">
-                    <svg v-if="!user.locked" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Layer_2" data-name="Layer 2"> <g id="invisible_box" data-name="invisible box"> <rect width="48" height="48" fill="none"></rect> </g> <g id="Icons"> <g> <path d="M3,30.5l-1,.6V39a2,2,0,0,0,2,2H24V37H6V33.4A21.7,21.7,0,0,1,16,31a21.5,21.5,0,0,1,8,1.5V28.3A24.4,24.4,0,0,0,16,27,25.6,25.6,0,0,0,3,30.5Z"></path> <path d="M16,5a9,9,0,1,0,9,9A9,9,0,0,0,16,5Zm0,14a5,5,0,1,1,5-5A5,5,0,0,1,16,19Z"></path> <path d="M44,28H43V25a6,6,0,0,0-12,0v3H30a2,2,0,0,0-2,2V41a2,2,0,0,0,2,2H44a2,2,0,0,0,2-2V30A2,2,0,0,0,44,28Zm-9-3a2,2,0,0,1,4,0v3H35Zm7,14H32V32H42Z"></path> </g> </g> </g> </g></svg>
-                    <svg v-else viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Layer_2" data-name="Layer 2"> <g id="invisible_box" data-name="invisible box"> <rect width="48" height="48" fill="none"></rect> </g> <g id="Icons"> <g> <path d="M3,30.5l-1,.6V39a2,2,0,0,0,2,2H24V37H6V33.4A21.7,21.7,0,0,1,16,31a21.5,21.5,0,0,1,8,1.5V28.3A24.4,24.4,0,0,0,16,27,25.6,25.6,0,0,0,3,30.5Z"></path> <path d="M16,23a9,9,0,1,0-9-9A9,9,0,0,0,16,23ZM16,9a5,5,0,1,1-5,5A5,5,0,0,1,16,9Z"></path> <path d="M44,28H36V25a6,6,0,0,0-12,0h4a2,2,0,0,1,4,0v3H30a2,2,0,0,0-2,2V41a2,2,0,0,0,2,2H44a2,2,0,0,0,2-2V30A2,2,0,0,0,44,28ZM42,39H32V32H42Z"></path> </g> </g> </g> </g></svg>
                     {{ user.locked ? 'Unlock' : 'Lock' }}
                   </button>
                   <button class="btn btn-secondary btn-sm ms-2" @click="toggleUserRole(index)">

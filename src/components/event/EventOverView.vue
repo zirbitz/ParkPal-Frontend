@@ -122,7 +122,7 @@ const handleUpdateEvent = (updatedEvent) => {
 .pagination-controls button {
   margin: 0 10px;
   padding: 8px 16px;
-  background-color: #007bff;
+  background-color: #005eca;
   color: white;
   border: none;
   border-radius: 4px;

@@ -210,6 +210,8 @@ export default {
     validateDescription() {
       if (!this.form.description) {
         this.errors.description = "Description is required";
+      } else if (description.value.length > 1000) {
+        this.errors.description = 'Description must be under 1000 characters.';
       } else {
         this.errors.description = "";
       }
