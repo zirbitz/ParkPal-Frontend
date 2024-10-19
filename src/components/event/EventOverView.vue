@@ -2,6 +2,7 @@
 import {computed, onMounted, ref} from 'vue';
 import EventCard from "@/components/event/EventCard.vue";
 import axios from 'axios';
+import {API_ROUTES} from "@/apiRoutes.js";
 
 const events = ref([]); // All events from API
 const currentPage = ref(1); // Track the current page
@@ -12,7 +13,7 @@ const totalEventPages = computed(() => Math.ceil(events.value.length / eventsPer
 
 const fetchAllEvents = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/events'); // Ensure endpoint is correct
+    const response = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS()); // Ensure endpoint is correct
     events.value = response.data;
   } catch (error) {
     console.error("Error fetching events:", error);
