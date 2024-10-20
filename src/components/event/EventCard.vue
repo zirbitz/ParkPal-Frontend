@@ -62,7 +62,7 @@
 
 <script setup>
 import {onMounted, ref} from 'vue';
-import {fetchUserData} from '@/service/authService.js';
+import {fetchUserIdAndRole} from '@/service/authService.js';
 import {useRouter} from "vue-router";
 import axios from "axios";
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -303,7 +303,7 @@ const emitHeart = () => {
 // Fetch user data, creator username, joined users, and event media files on component mount
 onMounted(async () => {
   try {
-    const userData = await fetchUserData();
+    const userData = await fetchUserIdAndRole();
     if (userData && userData.id) {
       userId.value = userData.id;
     } else {

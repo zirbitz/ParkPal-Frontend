@@ -157,8 +157,7 @@ export default {
       try {
 
         const response = await this.login(loginData);
-
-        window.location.href = '/eventOverview';
+        this.$router.push({name: 'EventOverview'});
 
       } catch (error) {
         if (error.response) {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {API_ROUTES} from "@/apiRoutes.js";
 
-export async function fetchUserData() {
+export async function fetchUserIdAndRole() {
     try {
         const response = await axios.get(API_ROUTES.AUTH_ME, {
             withCredentials: true,

@@ -75,7 +75,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import axios from 'axios';
 import {API_ROUTES} from '@/apiRoutes.js';
 import {useStore} from "vuex";
@@ -97,12 +97,14 @@ async function fetchUserById(userId) {
   }
 }
 
+const authStatus = store.state;
+
 // Function to fetch auth status and user details
 async function fetchAuthStatus() {
   await store.dispatch('checkAuth');
   console.log('Auth status:', store.state.isAuthenticated);
 
-  if (store.state.isAuthenticated) {
+  if (authStatus.isAuthenticated) {
     console.log('User is authenticated');
     try {
       const userId = store.state.userId;
@@ -123,7 +125,7 @@ async function fetchAuthStatus() {
       }
     } catch (error) {
       console.error('Error fetching user or profile picture:', error);
-      profilePictureUrl.value = '/src/assets/images/default-profile.png';
+      profilePictureUrl.value = require('@/assets/images/default-profile.png');
     }
   }
 }
@@ -133,7 +135,12 @@ onMounted(() => {
   fetchAuthStatus();
 });
 
-const authStatus = store.state;
+// Watch for changes in the authentication state
+watch(() => store.state.isAuthenticated, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    fetchAuthStatus();
+  }
+});
 </script>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <script setup>
 import {computed, onMounted, ref} from 'vue';
 import axios from 'axios';
-import {fetchUserData} from "@/service/authService.js";
+import {fetchUserIdAndRole} from "@/service/authService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
 
 
@@ -219,7 +219,7 @@ const submitForm = async (event) => {
     // Function to retrieve userId from the backend
     async function getUserIdFromBackend() {
       // Use fetchUserData to get the user data, including userId
-      const userData = await fetchUserData();
+      const userData = await fetchUserIdAndRole();
       if (userData && userData.id) {
         console.log(userData.id); // Log the userId for debugging
         return userData.id; // Return userId if it exists

@@ -1,6 +1,7 @@
 // src/store/index.js
 import {createStore} from 'vuex';
-import {fetchUserData, isAdmin, isAuthenticated, login, logout} from '@/service/authService';
+import {fetchUserIdAndRole, isAdmin, isAuthenticated, login, logout} from '@/service/authService';
+
 
 const store = createStore({
     state: {
@@ -16,9 +17,6 @@ const store = createStore({
         setAdmin(state, isAdmin) {
             state.isAdmin = isAdmin;
         },
-        setExpiresAt(state, expiresAt) {
-            state.expiresAt = expiresAt;
-        },
         setUserId(state, userId) {
             state.userId = userId;
         },
@@ -28,7 +26,7 @@ const store = createStore({
     },
     actions: {
         async checkAuth({ commit }) {
-            const userData = await fetchUserData();
+            const userData = await fetchUserIdAndRole();
             const authStatus = await isAuthenticated(userData);
             commit('setAuth', authStatus);
             if (authStatus) {

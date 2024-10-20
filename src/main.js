@@ -10,6 +10,6 @@ import store from "@/store/index.js";
 
 const app = createApp(App);
 
-app.use(router);
-app.use(store);
-app.mount('#app');
+store.dispatch('checkAuth').then(() => {
+    app.use(store).use(router).mount('#app');
+});
