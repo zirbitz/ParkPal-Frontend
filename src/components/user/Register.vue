@@ -91,7 +91,6 @@ export default {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
-          withCredentials: true,
         });
 
         console.log(response)
@@ -168,8 +167,7 @@ export default {
       }
 
       try {
-        const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData
-        , {withCredentials: true})
+        const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData)
 
         this.showFlashMessage = true
         this.flashMessageText = 'Registration successful'

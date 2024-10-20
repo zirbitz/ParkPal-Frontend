@@ -27,11 +27,10 @@ const paginatedEvents = computed(() => {
 });
 
 // Fetch user data for public view
-// Fetch user data for public view
 const fetchPublicUserProfileAndEvents = async () => {
   try {
     // Fetch the user's public profile data based on their ID
-    const userResponse = await axios.get(`${API_ROUTES.USERS}/${userId.value}`);
+    const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId.value));
     const userData = userResponse.data;
 
     if (userData) {
@@ -50,13 +49,12 @@ const fetchPublicUserProfileAndEvents = async () => {
       if (userData.profilePictureId) {
         const profilePictureResponse = await axios.get(API_ROUTES.FILES_BY_EXTERNAL_ID(userData.profilePictureId), {
           responseType: 'blob',
-          withCredentials: true,
         });
         profilePictureUrl.value = URL.createObjectURL(profilePictureResponse.data);
       }
 
       // Fetch the user's events
-      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id), { withCredentials: true });
+      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id));
       if (eventsResponse && eventsResponse.data && Array.isArray(eventsResponse.data)) {
         events.value = eventsResponse.data;
       } else {

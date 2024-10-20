@@ -2,10 +2,10 @@
 import {computed, onMounted, ref} from 'vue';
 import axios from 'axios';
 import CountryService from "@/service/countryService.js";
-import {fetchUserData} from "@/service/authService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
 import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
+import {useStore} from "vuex";
 
 // Profile Data
 const user = ref(null);
@@ -39,15 +39,15 @@ const paginatedEvents = computed(() => {
   return events.value.slice(start, start + eventsPerPage.value);
 });
 
+// Vuex store
+const store = useStore();
+
 const fetchUserProfileAndEvents = async () => {
   try {
     // Fetch the logged-in user's profile
-    const userData = await fetchUserData();
-    if (userData) {
-      const userId = userData.id;
-      const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId), {
-        withCredentials: true,
-      });
+    const userId = store.state.userId;
+    if (userId) {
+      const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId));
       user.value = userResponse.data;
       userid.value = user.value.id;
       firstName.value = user.value.firstName;
@@ -64,7 +64,6 @@ const fetchUserProfileAndEvents = async () => {
         try {
           const profilePictureResponse = await axios.get(API_ROUTES.FILES_BY_EXTERNAL_ID(profilePictureId.value), {
             responseType: 'blob', // Ensures it's treated as binary data
-            withCredentials: true
           });
 
           // Convert the blob to an object URL for display
@@ -78,7 +77,7 @@ const fetchUserProfileAndEvents = async () => {
       }
 
       // Fetch the user's events
-      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id), { withCredentials: true });
+      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userId));
       if (eventsResponse && eventsResponse.data && Array.isArray(eventsResponse.data)) {
         events.value = eventsResponse.data;
       } else {
@@ -144,7 +143,6 @@ const updateProfile = async () => {
       const formData = new FormData();
       formData.append("file", selectedProfilePictureFile.value);
       const uploadResponse = await axios.post(API_ROUTES.MINIO, formData, {
-        withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -165,12 +163,12 @@ const updateProfile = async () => {
       gender: gender.value?.toUpperCase() ?? null,
       email: email.value,
       userName: username.value,
-      id: userid.value,
+      id: store.state.userId,
       countryId: country.value,
       profilePictureId: newProfilePictureId, // Use the new profile picture ID, if uploaded
     };
 
-    const response = await axios.put(API_ROUTES.USERS_BY_ID(userid.value), formData, {
+    const response = await axios.put(API_ROUTES.USERS_BY_ID(formData.id), formData, {
       withCredentials: true,
     });
 

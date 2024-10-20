@@ -79,7 +79,6 @@ import {onMounted, ref} from 'vue';
 import axios from 'axios';
 import {API_ROUTES} from '@/apiRoutes.js';
 import {useStore} from "vuex";
-import {fetchUserData} from "@/service/authService.js";
 
 // Track auth status and profile picture URL
 const store = useStore();
@@ -106,8 +105,7 @@ async function fetchAuthStatus() {
   if (store.state.isAuthenticated) {
     console.log('User is authenticated');
     try {
-      const userData = await fetchUserData();
-      const userId = userData?.id;
+      const userId = store.state.userId;
 
       if (userId) {
         const fullUserData = await fetchUserById(userId);
@@ -116,7 +114,6 @@ async function fetchAuthStatus() {
         if (fullUserData && fullUserData.profilePictureId) {
           const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${fullUserData.profilePictureId}`, {
             responseType: 'blob',
-            withCredentials: true,
           });
           const imageUrl = URL.createObjectURL(pictureResponse.data);
           profilePictureUrl.value = imageUrl;

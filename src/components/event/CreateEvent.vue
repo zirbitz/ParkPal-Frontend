@@ -50,7 +50,7 @@ const fetchEventTags = async () => {
 // Fetch parks from the API on component mount
 onMounted(async () => {
   try {
-    const response = await axios.get(API_ROUTES.PARKS,{withCredentials: true});
+    const response = await axios.get(API_ROUTES.PARKS);
     parks.value = response.data;
     await fetchEventTags();
   } catch (error) {

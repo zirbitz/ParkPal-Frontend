@@ -6,6 +6,8 @@ const store = createStore({
     state: {
         isAuthenticated: false,
         isAdmin: false,
+        userId: null,
+        userRole: null,
     },
     mutations: {
         setAuth(state, isAuthenticated) {
@@ -16,16 +18,25 @@ const store = createStore({
         },
         setExpiresAt(state, expiresAt) {
             state.expiresAt = expiresAt;
-        }
+        },
+        setUserId(state, userId) {
+            state.userId = userId;
+        },
+        setUserRole(state, userRole) {
+            state.userRole = userRole;
+        },
     },
     actions: {
         async checkAuth({ commit }) {
             const userData = await fetchUserData();
-            const authStatus = isAuthenticated(userData);
+            const authStatus = await isAuthenticated(userData);
             commit('setAuth', authStatus);
             if (authStatus) {
-                const adminStatus = isAdmin(userData);
+                const adminStatus = await isAdmin(userData);
                 commit('setAdmin', adminStatus);
+                commit('setUserId', userData.id);
+                commit('setUserRole', userData.role);
+                commit('setProfilePictureUrl', userData.profilePictureUrl);
             }
         },
         async login({ dispatch }, { username, password }) {
@@ -36,6 +47,8 @@ const store = createStore({
             await logout();
             commit('setAuth', false);
             commit('setAdmin', false);
+            commit('setUserId', null);
+            commit('setUserRole', null);
         },
     },
 });
