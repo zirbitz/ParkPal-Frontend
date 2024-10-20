@@ -36,7 +36,6 @@ const store = createStore({
                 commit('setAdmin', adminStatus);
                 commit('setUserId', userData.id);
                 commit('setUserRole', userData.role);
-                commit('setProfilePictureUrl', userData.profilePictureUrl);
             }
         },
         async login({ dispatch }, { username, password }) {
