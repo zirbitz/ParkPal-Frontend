@@ -1,5 +1,5 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 import axios from 'axios';
 import {fetchUserData} from "@/service/authService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -13,8 +13,14 @@ const createMediaFileIds = ref([]); // To store the IDs of uploaded media files
 const parks = ref([]); // Store the list of parks
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
-// Calculate start date and time (1 hour from now)
-// Get the current date and time
+
+// Validation Computed Properties
+const isTitleValid = computed(() => title.value.trim() !== '');
+const isParkSelected = computed(() => !!selectedParkId.value);
+
+// Reactive state for the error popup
+const showErrorPopup = ref(false);
+
 const now = new Date();
 
 const startDate = ref(now.toISOString().split('T')[0]);
@@ -25,18 +31,141 @@ const endDateTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 const endDate = ref(endDateTime.toISOString().split('T')[0]);
 const endTime = ref(endDateTime.toISOString().split('T')[1].substring(0, 5));
 
+// Validation messages
+const descriptionValidationMessage = ref('');
+const startDateValidationMessage = ref('');
+const endDateValidationMessage = ref('');
+const endTimeValidationMessage = ref('');
+const startTimeValidationMessage = ref('');
+const tagValidationMessage = ref('');
+
 // Construct startTS using reactive properties
 // Construct startTS and endTS using reactive properties
 const startTS = computed(() => `${startDate.value}T${startTime.value}`);
 const endTS = computed(() => `${endDate.value}T${endTime.value}`);
 
+const isTagValid = computed(() => {
+  const tag = customTagInput.value.trim();
+
+  // Skip validation if the input is empty (but do not allow empty tag addition)
+  if (tag === '') {
+    tagValidationMessage.value = '';
+    return true;
+  }
+
+  // Check if the tag length is between 3 and 50 characters
+  if (tag.length < 3 || tag.length > 50) {
+    tagValidationMessage.value = 'Tag must be between 3 and 50 characters long.';
+    return false;
+  }
+
+  // Check if the custom tag already exists in the available tags or selected tags
+  const tagExistsInAvailableTags = availableTags.value.some(t => t.name.toLowerCase() === tag.toLowerCase());
+  const tagExistsInSelectedTags = Array.from(selectedTags.value).some(selectedTag => {
+    const foundTag = availableTags.value.find(t => t.id === selectedTag);
+    return foundTag && foundTag.name.toLowerCase() === tag.toLowerCase();
+  });
+
+  if (tagExistsInAvailableTags || tagExistsInSelectedTags) {
+    tagValidationMessage.value = 'This tag already exists or has already been selected.';
+    return false;
+  }
+
+  tagValidationMessage.value = '';
+  return true;
+});
+
+const isDescriptionValid = computed(() => {
+  if (description.value.trim() === '') {
+    descriptionValidationMessage.value = 'Description is required.';
+    return false;
+  }
+
+  if (description.value.length > 1000) {
+    descriptionValidationMessage.value = 'Description must be under 1000 characters.';
+    return false
+  }
+
+  descriptionValidationMessage.value = '';
+  return true;
+});
+
+// Validate Start Date
+const isStartDateValid = computed(() => {
+  if (!startDate.value) {
+    startDateValidationMessage.value = 'Start date is required.';
+    return false;
+  }
+  startDateValidationMessage.value = '';
+  return true;
+});
+
+// Validate End Date
+const isEndDateValid = computed(() => {
+  if (!endDate.value) {
+    endDateValidationMessage.value = 'End date is required.';
+    return false;
+  }
+
+  const start = new Date(startDate.value);
+  const end = new Date(endDate.value);
+
+  if (end < start) {
+    endDateValidationMessage.value = 'End date must be the same or after the start date.';
+    return false;
+  }
+
+  const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+  if (end > oneYearFromNow) {
+    endDateValidationMessage.value = 'End date cannot be more than 1 year in the future.';
+    return false;
+  }
+
+  endDateValidationMessage.value = '';
+  return true;
+});
+
+// Validate Start Time
+const isStartTimeValid = computed(() => {
+  if (!startTime.value) {
+    startTimeValidationMessage.value = 'Start time is required.';
+    return false;
+  }
+
+  if (!isStartDateValid.value) {
+    startTimeValidationMessage.value = '';
+    return false;
+  }
+
+  return startTime.value !== '' && startDateValidationMessage.value === '';
+});
+
+// Validate End Time
+const isEndTimeValid = computed(() => {
+  if (!endTime.value) {
+    endTimeValidationMessage.value = 'End time is required.';
+    return false;
+  }
+
+  const start = new Date(`${startDate.value}T${startTime.value}`);
+  const end = new Date(`${endDate.value}T${endTime.value}`);
+  const duration = (end - start) / (1000 * 60); // Duration in minutes
+
+  if (end <= start) {
+    endTimeValidationMessage.value = 'End time must be after start time.';
+    return false;
+  }
+  if (duration < 30) {
+    endTimeValidationMessage.value = 'Duration must be at least 30 minutes.';
+    return false;
+  }
+
+  endTimeValidationMessage.value = '';
+  return true;
+});
+
 const title = ref('');
 const description = ref('');
-
-const showErrorModal = ref(false);  // Ref to control the visibility of the error modal
-const errorMessage = ref('');
-
-const descriptionLength = computed(() => description.value.length);
 
 // Fetch available event tags from the API
 const fetchEventTags = async () => {
@@ -146,45 +275,22 @@ const toggleTagSelection = (tagId) => {
   }
 };
 
+// Add custom tag
 const addCustomTag = () => {
   const tag = customTagInput.value.trim();
 
-  // Check if the tag length is between 3 and 50 characters
-  if (tag.length < 3 || tag.length > 50) {
-    // Set error message, clear the input field, and show the error modal
-    errorMessage.value = 'Tag must be between 3 and 50 characters long.';
-    showErrorModal.value = true;
-    customTagInput.value = ''; // Clear the input field
-    hideErrorModalAfterDelay();
+  if (tag === '') {
+    tagValidationMessage.value = 'Tag must be between 3 and 50 characters long.';
     return;
   }
 
-  // Check if the custom tag already exists in the available tags or selected tags
-  const tagExistsInAvailableTags = availableTags.value.some(t => t.name.toLowerCase() === tag.toLowerCase());
-  const tagExistsInSelectedTags = Array.from(selectedTags.value).some(selectedTag => {
-    const foundTag = availableTags.value.find(t => t.id === selectedTag);
-    return foundTag && foundTag.name.toLowerCase() === tag.toLowerCase();
-  });
+  if (!isTagValid.value) {
 
-  if (tagExistsInAvailableTags || tagExistsInSelectedTags) {
-    // Set error message, clear the input field, and show the error modal
-    errorMessage.value = 'This tag already exists or has already been selected.';
-    showErrorModal.value = true;
-    customTagInput.value = ''; // Clear the input field
-    hideErrorModalAfterDelay();
-  } else {
-    // Add the custom tag to the selected tags
-    selectedTags.value.add(tag);
-    customTagInput.value = ''; // Clear the input field
-    showErrorModal.value = false; // Hide the error modal if shown previously
+    return;
   }
-};
 
-const hideErrorModalAfterDelay = () => {
-  setTimeout(() => {
-    showErrorModal.value = false;
-    errorMessage.value = ''; // Clear the error message when the modal is hidden
-  }, 3000); // Adjust delay time as needed
+  selectedTags.value.add(tag);
+  customTagInput.value = '';
 };
 
 const getTagName = (tag) => {
@@ -196,19 +302,24 @@ const getTagName = (tag) => {
 // Check if a tag is selected
 const isTagSelected = (tag) => selectedTags.value.has(tag);
 
-const limitDescriptionLength = () => {
-  if (description.value.length > 1000) {
-    description.value = description.value.substring(0, 1000);
-  }
-};
 
 const submitForm = async (event) => {
   event.preventDefault();
 
-  if (description.value.length > 1000) {
-    errorMessage.value = 'Description cannot exceed 1000 characters.';
-    showErrorModal.value = true;
-    hideErrorModalAfterDelay();
+  // Check if any field is invalid
+  if (!isTitleValid.value ||
+      !isDescriptionValid.value ||
+      !isStartDateValid.value ||
+      !isStartTimeValid.value ||
+      !isEndDateValid.value ||
+      !isEndTimeValid.value ||
+      !isParkSelected.value) {
+
+    showErrorPopup.value = true;
+    setTimeout(() => {
+      showErrorPopup.value = false;
+    }, 3000);
+    window.scrollTo(0, 0);
     return;
   }
 
@@ -260,6 +371,7 @@ const submitForm = async (event) => {
     setTimeout(() => {
       showSuccessPopup.value = false;
     }, 3000); // Hide popup after 3 seconds
+    window.scrollTo(0, 0);
 
   } catch (error) {
     console.error('Error creating event:', error.response?.data || error.message);
@@ -272,41 +384,64 @@ const submitForm = async (event) => {
   <div class="container mt-4">
     <h1 class="text-center">Create Event</h1>
     <hr>
+    <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
+      Please fill in all required fields before submitting.
+    </div>
+    <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
+      Event successfully created
+    </div>
     <form id="editEventForm" @submit.prevent="submitForm">
-    <div class="mb-3">
+      <!-- Event Title -->
+      <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
-        <input type="text" class="form-control" id="title" v-model="title" required>
+        <input type="text" class="form-control" id="title" v-model="title" :class="{ 'is-invalid': !isTitleValid }">
+        <p v-if="!isTitleValid" class="text-danger">Event title is required.</p>
       </div>
+
+      <!-- Event Description -->
       <div class="mb-3">
         <label for="description" class="form-label">Event Description</label>
-        <textarea class="form-control" id="description" v-model="description" rows="3" required  @input="limitDescriptionLength"></textarea>
-        <p class="text-muted">
-          {{ descriptionLength }}/1000 characters
-        </p>
-        <p v-if="showErrorModal" class="text-danger mt-1">{{ errorMessage }}</p>
+        <textarea class="form-control" id="description" v-model="description" rows="3" :class="{ 'is-invalid': !isDescriptionValid }"></textarea>
+        <p v-if="!isDescriptionValid" class="text-danger">Event description is required.</p>
       </div>
+
+      <!-- Start Date -->
       <div class="mb-3">
         <label for="startDate" class="form-label">Start Date</label>
-        <input type="date" class="form-control" id="startDate" v-model="startDate" required>
+        <input type="date" class="form-control" id="startDate" v-model="startDate" :class="{ 'is-invalid':!isStartDateValid }">
+        <p v-if="startDateValidationMessage" class="text-danger">{{ startDateValidationMessage }}</p>
       </div>
+
+      <!-- Start Time -->
       <div class="mb-3">
         <label for="startTime" class="form-label">Start Time</label>
-        <input type="time" class="form-control" id="startTime" v-model="startTime" required>
+        <input type="time" class="form-control" id="startTime" v-model="startTime" :class="{ 'is-invalid': !isStartTimeValid }">
+        <p v-if="!isStartTimeValid" class="text-danger">{{ startTimeValidationMessage }}</p>
       </div>
+
+      <!-- End Date -->
       <div class="mb-3">
         <label for="endDate" class="form-label">End Date</label>
-        <input type="date" class="form-control" id="endDate" v-model="endDate" required>
+        <input type="date" class="form-control" id="endDate" v-model="endDate" :class="{ 'is-invalid': !isEndDateValid }">
+        <p v-if="!isEndDateValid" class="text-danger">{{ endDateValidationMessage }}</p>
       </div>
+
+      <!-- End Time -->
       <div class="mb-3">
         <label for="endTime" class="form-label">End Time</label>
-        <input type="time" class="form-control" id="endTime" v-model="endTime" required>
+        <input type="time" class="form-control" id="endTime" v-model="endTime" :class="{ 'is-invalid': !isEndTimeValid}">
+        <p v-if="!isEndTimeValid" class="text-danger">{{ endTimeValidationMessage }}</p>
       </div>
+
+      <!-- Park -->
       <div class="mb-3">
         <label for="park" class="form-label">Select Park</label>
-        <select class="form-select" id="park" v-model="selectedParkId" required>
+        <select class="form-select" id="park" v-model="selectedParkId" :class="{ 'is-invalid': !isParkSelected }">
           <option v-for="park in parks" :key="park.id" :value="park.id">{{ park.name }}</option>
         </select>
+        <p v-if="!isParkSelected" class="text-danger">{{ startTimeValidationMessage }}</p>
       </div>
+
       <div class="mb-3">
         <label for="eventMedia" class="form-label">List of Event Media (Attachments)</label>
         <div class="input-group mb-3 custom-width-input">
@@ -349,11 +484,27 @@ const submitForm = async (event) => {
 
         <!-- Custom Tag Input -->
         <div class="mt-2">
-          <input type="text" v-model="customTagInput" placeholder="Add custom tag" class="form-control mb-2">
-          <button type="button" class="btn btn-secondary" @click="addCustomTag">Add Tag</button>
-        </div>
+          <!-- Tag Input Field -->
+          <input
+              type="text"
+              v-model="customTagInput"
+              placeholder="Add custom tag"
+              class="form-control mb-2"
+              :class="{ 'is-invalid': !isTagValid}"
+          />
 
-        <p v-if="showErrorModal" class="text-danger mt-1">{{ errorMessage }}</p>
+          <!-- Validation Error Message -->
+          <p v-if="!isTagValid> 0" class="text-danger">{{ tagValidationMessage }}</p>
+
+          <!-- Add Tag Button -->
+          <button
+              type="button"
+              class="btn btn-secondary"
+              @click="addCustomTag"
+          >
+            Add Tag
+          </button>
+        </div>
 
         <!-- Display selected tags -->
         <div class="selected-tags mt-2">
@@ -366,12 +517,6 @@ const submitForm = async (event) => {
 
       <button type="submit" class="btn btn-primary mb-5" @keydown.enter.prevent>Create Event</button>
     </form>
-
-    <div v-if="showSuccessPopup" class="popup">
-      <div class="popup-content">
-        <p>Event created successfully!</p>
-      </div>
-    </div>
   </div>
 </template>
 
