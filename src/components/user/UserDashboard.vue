@@ -256,9 +256,9 @@ watch(profilePictureUrl, (newUrl) => {
               <label for="profilePicture" class="form-label">Profile Picture</label>
               <div class="mt-3">
                 <!-- Show the profile picture if available -->
-                <div v-if="profilePictureUrl">
-                  <img :src="profilePictureUrl" :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'" class="img-thumbnail" width="150">
-                  <button type="button" class="btn btn-danger mt-2" @click="resetProfilePicture">Delete Picture</button>
+                <div v-if="profilePictureUrl && profilePictureUrl.trim() !== ''">
+                  <img  :src="profilePictureUrl" :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'" class="img-thumbnail profile-picture" width="150">
+                  <button v-if="profilePictureId" type="button" class="btn btn-danger mt-2" @click="resetProfilePicture">Delete Picture</button>
                 </div>
                 <!-- Show error message if there's an error fetching the profile picture -->
                 <p v-else-if="profilePictureError" class="text-danger">{{ profilePictureError }}</p>
@@ -346,5 +346,10 @@ watch(profilePictureUrl, (newUrl) => {
 .flash-message {
   color: green;
   font-weight: bold;
+}
+
+.profile-picture {
+  margin-right: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 </style>
