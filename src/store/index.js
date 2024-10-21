@@ -50,19 +50,4 @@ const store = createStore({
     },
 });
 
-/*
-function setLogoutTimer(expiresAt) {
-    const currentTime = Math.floor(Date.now() / 1000);
-    const timeUntilExpiration = expiresAt - currentTime;
-    console.log('Token expires in', timeUntilExpiration, 'seconds');
-
-    if (timeUntilExpiration > 0) {
-        setTimeout(() => {
-            store.dispatch('logout');
-        }, timeUntilExpiration * 1000);
-    }
-}
-
- */
-
 export default store;
