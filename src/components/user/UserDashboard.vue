@@ -6,6 +6,7 @@ import {API_ROUTES} from "@/apiRoutes.js";
 import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
 import store from "@/store/index.js";
+import {fetchUserIdAndRole} from "@/service/authService.js";
 
 // Declare your refs and other variables here
 
@@ -56,7 +57,7 @@ const showErrorPopup = ref(false);
 const fetchUserProfileAndEvents = async () => {
   try {
     // Fetch the logged-in user's profile
-    const userData = await fetchUserData();
+    const userData = await fetchUserIdAndRole();
     if (userData) {
       const userId = userData.id;
       const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId), {
