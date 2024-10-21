@@ -329,7 +329,7 @@ onMounted(async () => {
 .card img {
   display: flex;
   margin: 0 auto;
-  max-width: 100%;
+  max-width: 50%;
   height: auto;
 }
 
@@ -379,18 +379,11 @@ onMounted(async () => {
   max-width: 100%; /* Use dynamic max-width from props */
 }
 
-.event-images {
-  width: 100%;
-  max-width: var(--image-max-width, 400px); /* fallback to default if not set */
-}
 
 .card-title {
   font-size: 1.5rem; /* Can scale with the root font size */
 }
 
-.event-images {
-  max-width: calc(100% - 2rem); /* A flexible size that adapts to the available space */
-}
 
 .list-group-item ul {
   padding-left: 20px;
@@ -403,16 +396,6 @@ onMounted(async () => {
 .event-images {
   height: auto;
   width: 100%;
-  max-width: 400px;
-  min-width: 200px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.creator-image {
-  height: auto;
-  width: 50%;
   max-width: 200px;
   min-width: 100px;
   display: block;
@@ -433,7 +416,7 @@ onMounted(async () => {
 
 .event-images {
   flex-shrink: 0;
-  width: 100%; /* Adjust the width to make sure only one image is visible */
+  width: 100%;
 }
 
 .prev, .next {
@@ -460,36 +443,8 @@ onMounted(async () => {
 /* Responsive images */
 @media (max-width: 768px) {
   .event-images {
-    max-width: 300px;
-    min-width: 150px;
-  }
-
-  .creator-image {
-    max-width: 150px;
-    min-width: 80px;
-  }
-}
-
-.creator-image {
-  height: auto;
-  width: 50%;
-  max-width: 200px;
-  min-width: 100px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Media query for smaller screens */
-@media (max-width: 768px) {
-  .event-images {
-    max-width: 300px;
-    min-width: 150px;
-  }
-
-  .creator-image {
-    max-width: 150px;
-    min-width: 80px;
+    max-width: 100px;
+    min-width: 50px;
   }
 }
 
@@ -497,11 +452,6 @@ li {
   list-style: none;
 }
 
-.user-icon {
-  margin-right: 8px;
-  width: 24px;
-  height: 24px;
-}
 
 /* Initial button styles */
 .btn-join {

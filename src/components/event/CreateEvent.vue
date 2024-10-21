@@ -13,6 +13,7 @@ const createMediaFileIds = ref([]); // To store the IDs of uploaded media files
 const parks = ref([]); // Store the list of parks
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
+const customTags = ref(new Map());
 
 // Validation Computed Properties
 const isTitleValid = computed(() => title.value.trim() !== '');
@@ -276,7 +277,7 @@ const toggleTagSelection = (tagId) => {
 };
 
 // Add custom tag
-const addCustomTag = () => {
+const addCustomTag = async () => {
   const tag = customTagInput.value.trim();
 
   if (tag === '') {
@@ -285,19 +286,40 @@ const addCustomTag = () => {
   }
 
   if (!isTagValid.value) {
-
     return;
   }
+  try {
+    const response = await axios.post('http://localhost:8080/event-tags', {name: tag}, {withCredentials: true});
+    const newTagId = response.data.id;
 
-  selectedTags.value.add(tag);
-  customTagInput.value = '';
+    selectedTags.value.add(newTagId);
+    customTags.value.set(newTagId, tag);  // Store custom tag with its ID
+
+    customTagInput.value = '';
+  } catch (error) {
+    console.error('Error adding custom tag:', error);
+    tagValidationMessage.value = 'Error adding custom tag. Please try again.';
+  }
 };
 
-const getTagName = (tag) => {
-  // Check if it's an ID from availableTags or a custom tag (string)
-  const foundTag = availableTags.value.find(t => t.id === tag);
-  return foundTag ? foundTag.name : tag; // If tag is found in availableTags, return its name, else it's a custom tag
+const getTagName = (tagId) => {
+  // Look for the tag in availableTags
+  const foundTag = availableTags.value.find(t => t.id === tagId);
+  if (foundTag) {
+    return foundTag.name;
+  }
+
+  // Look for the tag in customTags
+  const customTagName = customTags.value.get(tagId);
+  if (customTagName) {
+    return customTagName;
+  }
+
+  // Return fallback if the tag is not found
+  return 'Unknown tag';
 };
+
+
 
 // Check if a tag is selected
 const isTagSelected = (tag) => selectedTags.value.has(tag);

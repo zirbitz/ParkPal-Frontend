@@ -58,31 +58,45 @@ const fetchUsers = async () => {
   }
 };
 
-// TODO: get Userdata from here to work bc users.value is empty but users are not!
 const fetchMediaFiles = async () => {
   try {
-    console.log(users)
-    console.log(users.value)
-
-    // Extract unique media file IDs from both mediaIds and profilePictureIds, flattening and removing duplicates
-    const mediaIds = [...new Set(
+    // Extract unique media file IDs from users' profilePictureIds and mediaIds
+    const userMediaIds = [...new Set(
         users.value
             .map(user => [
-              ...(user.mediaIds || []), // Safely include mediaIds array
-              user.profilePictureId || null // Include profilePictureId only if it exists
+              user.profilePictureId || null
             ])
             .reduce((acc, curr) => acc.concat(curr), []) // Flatten the array
             .filter(id => id) // Filter out null or undefined values
     )];
 
-    if (mediaIds.length === 0) {
-      console.log("No media IDs found for any user.");
+    console.log("User-related media IDs:", userMediaIds);
+
+    // Fetch the events to extract their mediaFileExternalIds
+    const eventsResponse = await axios.get('http://localhost:8080/events', { withCredentials: true });
+    const events = eventsResponse.data;
+
+    // Extract unique media file IDs from events (mediaFileExternalIds)
+    const eventMediaIds = [...new Set(
+        events
+            .map(event => event.mediaFileExternalIds || []) // Safely access mediaFileExternalIds
+            .reduce((acc, curr) => acc.concat(curr), []) // Flatten the array
+            .filter(id => id) // Filter out null or undefined values
+    )];
+
+    console.log("Event-related media IDs:", eventMediaIds);
+
+    // Combine both user and event media IDs and remove duplicates
+    const allMediaIds = [...new Set([...userMediaIds, ...eventMediaIds])];
+
+    if (allMediaIds.length === 0) {
+      console.log("No media IDs found.");
       mediaFiles.value = [];
       return;
     }
 
     // Fetch media files for each ID with response type 'blob' to handle binary data like images
-    const mediaRequests = mediaIds.map(id =>
+    const mediaRequests = allMediaIds.map(id =>
         axios.get(`http://localhost:8080/files/${id}`, {
           responseType: 'blob', // Ensure the response is a binary blob
         })
@@ -90,17 +104,20 @@ const fetchMediaFiles = async () => {
 
     const mediaResponses = await Promise.all(mediaRequests);
 
-
+    // Store the fetched media files with their respective URLs and mime types
     mediaFiles.value = mediaResponses.map((res, index) => ({
-      id: mediaIds[index], // Storing the corresponding file ID
-      url: URL.createObjectURL(res.data),
-      mimeType: res.headers['content-type']
+      id: allMediaIds[index], // Storing the corresponding file ID
+      url: URL.createObjectURL(res.data), // Create a URL for the blob data
+      mimeType: res.headers['content-type'] // Get the mime type from the response headers
     }));
+
+    console.log("Fetched media files:", mediaFiles.value);
 
   } catch (error) {
     console.error("Error fetching media files:", error);
   }
 };
+
 const isImage = (mimeType) => {
   return mimeType.startsWith('image/');
 };
@@ -222,9 +239,9 @@ const clearSearch = () => {
 
 // Fetch users and events when component is mounted
 onMounted(async () => {
-  await fetchUsers();  // Ensure users are fetched first
-  fetchMediaFiles();   // Now call fetchMediaFiles after users are loaded
-  fetchEvents();       // Fetch events as usual
+  await fetchUsers();
+  fetchEvents();
+  fetchMediaFiles();
 });
 </script>
 
