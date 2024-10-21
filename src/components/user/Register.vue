@@ -2,16 +2,11 @@
 import CountryService from "@/service/countryService.js";
 import axios from "axios";
 import {API_ROUTES} from "@/apiRoutes.js";
-import CAPTCHAPuzzle from "@/components/CAPTCHAPuzzle.vue";
 
 export default {
-  components: {
-    CAPTCHAPuzzle
-  },
+
   data() {
     return {
-      captchaValid: false,
-      captchaDirty: false,
       genderOptions: ['FEMALE', 'MALE', 'OTHER'],
       firstName: '',
       lastName: '',
@@ -51,10 +46,10 @@ export default {
       zip: '',
       zipValid: false,
       zipDirty: false,
-      userPicture: null, // For holding the uploaded picture file
-      userPicturePreview: '',  // Picture preview URL
+      userPicture: null,
+      userPicturePreview: '',
       pictureError: '',
-      uploadedFileId: '', // For holding the returned file ID from MinIO
+      uploadedFileId: '',
       terms: false,
       termsValid: false,
       termsDirty: false,
@@ -66,16 +61,12 @@ export default {
       flashMessageText: ''
     };
   },
-  async created() { // by Create the Component fetch the countries
-    this.countries = await CountryService.getCountries(); // Fetch countries on component creation
+  async created() {
+    this.countries = await CountryService.getCountries();
   },
   methods: {
-    handleCaptchaCompleted() {
-      this.captchaValid = true;
-      this.captchaDirty = true;
-    },
     checkPasswordsMatch() {
-      this.passwordsMatch = this.password === this.confirmPassword
+      this.passwordsMatch = this.password === this.confirmPassword;
     },
     async uploadPictureToMinio() {
       if (!this.userPicture) {
@@ -92,10 +83,7 @@ export default {
             'Content-Type': 'multipart/form-data',
           },
         });
-
-        console.log(response)
-
-        return response.data;  // Adjust this if your response is different
+        return response.data;
       } catch (error) {
         console.error('Error uploading the picture:', error);
         this.pictureError = 'Error uploading the picture. Please try again.';
@@ -106,40 +94,17 @@ export default {
       this.validatePassword();
       this.markAllFieldsDirty();
       this.runValidations();
-      console.log('Password Valid:', this.passwordValid);
-      if (!this.passwordValid) {
-        console.log('Password validation failed.');
-        return;
-      }
 
-      if (!this.captchaValid) {
-        this.captchaDirty = true;
-        console.log('CAPTCHA validation failed.');
-        return;
-      }
+      if (!this.passwordValid) return;
 
-      console.log('All Fields Valid:', this.allFieldsValid());
-      if (!this.allFieldsValid()) {
-        console.log('Field validation failed.');
-        return;
-      }
+      if (!this.allFieldsValid()) return;
 
       const userPictureValid = this.validateUserPicture();
-      console.log('User Picture Valid:', userPictureValid);
-      if (!userPictureValid) {
-        console.log('User picture validation failed.');
-        return;
-      }
+      if (!userPictureValid) return;
 
       const uploadedFileID = await this.uploadPictureToMinio();
-      console.log('Received File ID:', uploadedFileID);
-      if (!uploadedFileID) {
-        console.log('File ID is invalid.');
-        return;
-      }
+      if (!uploadedFileID) return;
 
-      // Check if passwords match
-      console.log('Passwords Match:', this.passwordsMatch);
       if (!this.passwordsMatch) {
         alert('Passwords do not match');
         return;
@@ -157,35 +122,18 @@ export default {
         profilePictureId: uploadedFileID,
       };
 
-      for (let [key, value] of Object.entries(formData)) {
-        console.log(key + ": " + value);
-      }
-
-      if (!this.passwordsMatch) {
-        alert("Passwords do not match")
-        return
-      }
-
       try {
-        const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData)
-
-        this.showFlashMessage = true
-        this.flashMessageText = 'Registration successful'
+        const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData);
+        this.showFlashMessage = true;
+        this.flashMessageText = 'Registration successful';
         setTimeout(() => {
           this.showSuccessMessage = false;
-          this.showFlashMessage = false
-        }, 3000); // Adjust time as needed
-
+          this.showFlashMessage = false;
+        }, 3000);
         this.resetForm();
       } catch (error) {
         console.error('Fetch error:', error);
-        const errors = error.response.data.errors;
-        if (errors != null) {
-          errors.forEach(err => {
-            this.passwordError += err.defaultMessage + '\n';
-          })
-        }
-        //alert('An error occurred during registration.');
+        this.passwordError = error.response?.data.errors?.join('\n') ?? '';
       }
     },
     markAllFieldsDirty() {
@@ -200,7 +148,6 @@ export default {
       this.zipDirty = true;
       this.termsDirty = true;
       this.dsvgoDirty = true;
-      this.captchaDirty = true;
     },
     runValidations() {
       this.validateFirstName();
@@ -308,8 +255,7 @@ export default {
           this.emailValid &&
           this.usernameValid &&
           this.termsValid &&
-          this.dsvgoValid &&
-          this.captchaValid;
+          this.dsvgoValid
     },
     handleFileUpload(event) {
       this.userPicture = event.target.files[0];  // Get the selected file
@@ -535,18 +481,6 @@ export default {
             </div>
           </div>
         </div>
-        <!-- CAPTCHA Puzzle -->
-        <div class="col-md-6 mt-4">
-          <label for="captcha" class="form-label">Solve the CAPTCHA:</label>
-          <CAPTCHAPuzzle @captcha-solved="handleCaptchaCompleted" />
-          <div v-if="!captchaValid && captchaDirty" class="invalid-feedback">
-            Please complete the CAPTCHA.
-          </div>
-        </div>
-
-        <div v-if="captchaValid" class="captcha-feedback success">CAPTCHA Solved!</div>
-        <div v-if="!captchaValid && captchaDirty" class="captcha-feedback error">Please solve the CAPTCHA to continue.</div>
-
       </div>
 
       <div class="col mt-5 sign-in-redirect">
