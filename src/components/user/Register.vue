@@ -70,7 +70,6 @@ export default {
     },
     async uploadPictureToMinio() {
       if (!this.userPicture) {
-        this.pictureError = 'Please upload a picture.';
         return null;
       }
 
@@ -96,14 +95,16 @@ export default {
       this.runValidations();
 
       if (!this.passwordValid) return;
-
       if (!this.allFieldsValid()) return;
 
       const userPictureValid = this.validateUserPicture();
       if (!userPictureValid) return;
 
-      const uploadedFileID = await this.uploadPictureToMinio();
-      if (!uploadedFileID) return;
+      let uploadedFileID = null;
+      if (this.userPicture) {
+        uploadedFileID = await this.uploadPictureToMinio();
+        if (!uploadedFileID) return;
+      }
 
       if (!this.passwordsMatch) {
         alert('Passwords do not match');
@@ -119,7 +120,7 @@ export default {
         userName: this.username,
         password: this.password,
         countryId: this.country,
-        profilePictureId: uploadedFileID,
+        profilePictureId: uploadedFileID || null,  // Allow null if no picture was uploaded
       };
 
       try {
