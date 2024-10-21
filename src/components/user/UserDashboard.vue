@@ -7,6 +7,7 @@ import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
 import store from "@/store/index.js";
 import {fetchUserIdAndRole} from "@/service/authService.js";
+import {onBeforeRouteLeave} from "vue-router";
 
 // Declare your refs and other variables here
 
@@ -225,6 +226,7 @@ const updateProfile = async () => {
     });
 
     user.value = response.data;
+    profilePictureId.value = newProfilePictureId;
     showFlashMessage.value = true;
     showSuccessPopup.value = true;
 
@@ -293,6 +295,16 @@ watch(profilePictureUrl, (newUrl) => {
   const event = new CustomEvent('profilePictureUpdated', { detail: newUrl });
   window.dispatchEvent(event);
 });
+
+// Add beforeRouteLeave guard to reset profile picture
+onBeforeRouteLeave(async (to, from, next) => {
+  if (selectedProfilePictureFile.value) {
+    selectedProfilePictureFile.value = null;
+    await fetchUserProfileAndEvents();
+  }
+  next();
+});
+
 </script>
 
 
