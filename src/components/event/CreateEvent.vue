@@ -16,7 +16,6 @@ const showSuccessPopup = ref(false);
 const customTags = ref(new Map());
 
 // Validation Computed Properties
-const isTitleValid = computed(() => title.value.trim() !== '');
 const isParkSelected = computed(() => !!selectedParkId.value);
 
 // Reactive state for the error popup
@@ -34,6 +33,7 @@ const endTime = ref(endDateTime.toISOString().split('T')[1].substring(0, 5));
 
 // Validation messages
 const descriptionValidationMessage = ref('');
+const titleValidationMessage = ref('');
 const startDateValidationMessage = ref('');
 const endDateValidationMessage = ref('');
 const endTimeValidationMessage = ref('');
@@ -76,6 +76,25 @@ const isTagValid = computed(() => {
   return true;
 });
 
+const isTitleValid = computed(() => {
+  if (title.value.trim() === '') {
+    titleValidationMessage.value = 'Title is required.';
+    return false;
+  }
+
+  if (title.value.length < 3) {
+    titleValidationMessage.value = 'Title must be at least 3 characters long.';
+    return false;
+  }
+
+  if (title.value.length > 250) {
+    titleValidationMessage.value = 'Title must be under 250 characters.';
+    return false;
+  }
+
+  titleValidationMessage.value = '';
+  return true;
+});
 const isDescriptionValid = computed(() => {
   if (description.value.trim() === '') {
     descriptionValidationMessage.value = 'Description is required.';
@@ -249,9 +268,15 @@ const uploadMediaFiles = async () => {
       const formData = new FormData();
       formData.append('file', file);
 
+      // Check if MIME type is an image to apply FileType.PHOTO
+      const mimeType = file.type;
+      const fileType = mimeType.startsWith('image/') ? 'PHOTO' : 'OTHER'; // Assuming PHOTO for images, OTHER for anything else
+      formData.append('fileType', fileType);
+
       try {
-        const response = await axios.post(API_ROUTES.MINIO, formData, {withCredentials: true,
-          headers: { 'Content-Type': 'multipart/form-data' }
+        const response = await axios.post(API_ROUTES.MINIO, formData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data; // Assuming the response contains the ID of the uploaded file
       } catch (uploadError) {
@@ -268,6 +293,9 @@ const uploadMediaFiles = async () => {
     throw error; // Re-throw to handle higher up
   }
 };
+
+
+
 const toggleTagSelection = (tagId) => {
   if (selectedTags.value.has(tagId)) {
     selectedTags.value.delete(tagId);
@@ -319,6 +347,9 @@ const getTagName = (tagId) => {
   return 'Unknown tag';
 };
 
+watch(title, (newValue) => {
+  isTitleValid.value;
+});
 
 
 // Check if a tag is selected
@@ -417,15 +448,14 @@ const submitForm = async (event) => {
       <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
         <input type="text" class="form-control" id="title" v-model="title" :class="{ 'is-invalid': !isTitleValid }">
-        <p v-if="!isTitleValid" class="text-danger">Event title is required.</p>
+        <p v-if="titleValidationMessage" class="text-danger">{{ titleValidationMessage }}</p>
       </div>
 
       <!-- Event Description -->
       <div class="mb-3">
         <label for="description" class="form-label">Event Description</label>
         <textarea class="form-control" id="description" v-model="description" rows="3" :class="{ 'is-invalid': !isDescriptionValid }"></textarea>
-        <p v-if="!isDescriptionValid" class="text-danger">Event description is required.</p>
-      </div>
+        <p v-if="descriptionValidationMessage" class="text-danger">{{ descriptionValidationMessage }}</p>      </div>
 
       <!-- Start Date -->
       <div class="mb-3">

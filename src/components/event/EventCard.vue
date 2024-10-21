@@ -1,60 +1,69 @@
 <template>
-  <div class="card" :style="{ color: textColor, maxWidth: cardWidth }">
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item">
-        <p v-if="eventTagNames?.length">
-      <span class="badge" v-for="(tagName, index) in eventTagNames" :key="index">
-        {{ tagName }}<span v-if="index < eventTagNames.length - 1"></span>
-      </span>
-        </p>
-        <p v-else></p>
-        <div class="carousel-container">
-          <!-- Render the images -->
-          <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
-            <img
-                v-for="(url, index) in eventImageUrls"
-                :key="index"
-                class="event-images"
-                :src="url"
-                :alt="url === placeholderImage ? 'Placeholder-Image: A Icon showing 4 friends in a circle to symbolize an Event' : truncateDescription(event.description)"
+  <div class="card-container">
+    <div class="card" :style="{ color: textColor, maxWidth: cardWidth }">
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <p v-if="eventTagNames?.length">
+          <span class="badge" v-for="(tagName, index) in eventTagNames" :key="index">
+            {{ tagName }}<span v-if="index < eventTagNames.length - 1"></span>
+          </span>
+          </p>
+          <p v-else></p>
 
-            />
+          <!-- Carousel container -->
+          <div class="carousel-container">
+            <!-- Image carousel -->
+            <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+              <div v-for="(url, index) in eventImageUrls" :key="index" class="slide">
+                <img
+                    class="event-images"
+                    :src="url"
+                    :alt="url === placeholderImage ? 'Placeholder Image' : truncateDescription(event.description)"
+                />
+              </div>
+            </div>
+
+            <!-- Carousel controls -->
+            <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide">❮</button>
+            <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide">❯</button>
           </div>
-
-          <!-- Carousel controls -->
-          <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide">❮</button>
-          <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide">❯</button>
-        </div>
-      </li>
-    </ul>
-    <div class="card-body">
-      <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
-      <h6 class="card-text">
-        <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
-        <p>{{ fullAddress }}</p>
-      </h6>
-      <p class="card-text">{{ event.description || 'No description available' }}</p>
-      <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-      <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
-      <p class="card-text"><strong>Creator: </strong>
-        <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
-      </p>
-      <p class="card-text"><strong>Joined Users:</strong></p>
-      <ul class="text-center">
-        <li v-for="(username, index) in event.joinedUserNames || []" :key="username">
-          <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
         </li>
       </ul>
-      <div style="position: relative;">
-        <div class="heart-container" ref="heartContainer"></div>
-        <a
-            href="#"
-            class="btn btn-join text-center"
-            @click.prevent="toggleJoin"
-            :class="{ 'join-animation': isJoining, 'unjoin-animation': isUnjoining, 'joined': isUserJoined }"
-        >
-          {{ isUserJoined ? 'Joined' : 'Join Event' }}
-        </a>
+
+      <div class="card-body">
+        <!-- Event details -->
+        <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
+        <h6 class="card-text">
+          <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
+          <p>{{ fullAddress }}</p>
+        </h6>
+        <p class="card-text">{{ event.description || 'No description available' }}</p>
+        <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
+        <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
+        <p class="card-text"><strong>Creator: </strong>
+          <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
+        </p>
+
+        <!-- Joined users list -->
+        <p class="card-text"><strong>Joined Users:</strong></p>
+        <ul class="text-center">
+          <li class="user-list-item" v-for="(username, index) in event.joinedUserNames || []" :key="username">
+            <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
+          </li>
+        </ul>
+
+        <!-- Join event button -->
+        <div class="text-center">
+          <div class="heart-container" ref="heartContainer"></div>
+          <a
+              href="#"
+              class="btn btn-join"
+              @click.prevent="toggleJoin"
+              :class="{ 'join-animation': isJoining, 'unjoin-animation': isUnjoining, 'joined': isUserJoined }"
+          >
+            {{ isUserJoined ? 'Joined' : 'Join Event' }}
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -220,7 +229,7 @@ const fetchEventImages = async (mediaFileIds) => {
               const response = await axios.get(`${API_ROUTES.MINIO}/${fileId}`, {
                 responseType: 'blob',
                 withCredentials: true,
-              });
+              })
 
               // Check if the response contains valid image data
               if (response.data.size > 0) {
@@ -322,103 +331,133 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.card {
-  margin-bottom: 10px;
+.card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
-.card img {
-  display: flex;
-  margin: 0 auto;
-  max-width: 50%;
-  height: auto;
+.card {
+  width: 100%;
+  max-width: 300px; /* Default for larger screens */
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: max-width 0.3s ease-in-out;
 }
 
 .card-body {
-  text-align: center;
-}
-:root {
-  --card-padding: 16px;
-  --card-max-width: 100%;
-  --card-background: white;
-  --text-color: #000;
-  --primary-color: #B00101;
-  --secondary-color: #28a745;
-  --badge-color: #B00101;
-  --badge-bg-color: white;
-  --image-max-width: 400;
+  font-size: 1rem;
 }
 
-.card {
-  padding: var(--card-padding);
-  background: var(--card-background);
-  color: var(--text-color);
-  max-width: var(--card-max-width);
-  margin-bottom: 10px;
-}
-.btn {
-  margin-top: 10px;
-}
-
-@media (max-width: 768px) {
-  .card {
-    padding: 8px;
-  }
-
-  .event-images {
-    max-width: 100%;
-    min-width: 150px;
-  }
-
-  .btn-join {
-    padding-left: 1.5em;
-    padding-right: 1em;
-  }
+/* Image carousel */
+.card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  padding: 10px;
 }
 
 .card {
-  max-width: 100%; /* Use dynamic max-width from props */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px; /* You can adjust this based on your desired max card size */
+  height: 100%;
+  max-height: 700px; /* Adjust as needed */
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background-color: #fff;
 }
 
+
+.card-body {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+  overflow: hidden;
+}
 
 .card-title {
-  font-size: 1.5rem; /* Can scale with the root font size */
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Handles long titles */
 }
 
-
-.list-group-item ul {
-  padding-left: 20px;
+.card-text {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 5; /* Limit to 5 lines by default */
+  -webkit-box-orient: vertical;
 }
 
-.list-group-item ul li {
-  list-style-type: none;
+.card-text.long-text {
+  font-size: 0.7rem; /* Resizes for longer content */
 }
 
-.event-images {
-  height: auto;
-  width: 100%;
-  max-width: 200px;
-  min-width: 100px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+.card-text.short-text {
+  font-size: 0.9rem; /* Normal size */
+}
+
+/* Ensure no font size exceeds 11px on smaller cards */
+@media (max-width: 400px) {
+  .card-text {
+    font-size: 0.7rem; /* 11px for small screens */
+  }
+}
+
+/* Overflow handling */
+.card-text {
+  display: -webkit-box;
+  line-clamp: 2; /* Limit to 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
 
 .carousel-container {
   position: relative;
-  overflow: hidden;
-  width: 100%; /* Make sure it's full width */
+  width: 100%; /* Ensure the container takes full width */
+  overflow: hidden; /* Hide the overflow of slides */
 }
 
+/* Carousel slides */
 .carousel-slide {
   display: flex;
   transition: transform 0.5s ease-in-out;
+  width: 100%;
+  max-height: 200px;
+}
+
+.slide {
+  flex: 0 0 100%; /* Each slide takes up 100% of the container width */
+  max-width: 100%;
+  max-height: 200px;
 }
 
 .event-images {
-  flex-shrink: 0;
-  width: 100%;
+  width: 100%; /* Ensure images take up the full width of their container */
+  height: auto; /* Maintain aspect ratio */
+  object-fit: cover;
+  max-height: 200px;
 }
 
+/* Carousel controls */
 .prev, .next {
   position: absolute;
   top: 50%;
@@ -426,9 +465,10 @@ onMounted(async () => {
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
   border: none;
+  font-size: 2rem;
+  padding: 0 10px;
   cursor: pointer;
-  padding: 10px;
-  z-index: 100;
+  z-index: 10;
 }
 
 .prev {
@@ -440,16 +480,16 @@ onMounted(async () => {
 }
 
 
-/* Responsive images */
-@media (max-width: 768px) {
-  .event-images {
-    max-width: 100px;
-    min-width: 50px;
-  }
-}
 
-li {
+
+.user-list-item {
   list-style: none;
+  padding-left: 30px;
+  padding-right: 12px;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NDggNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTIyNCAyNTZBMTI4IDEyOCAwIDEgMCAyMjQgMGExMjggMTI4IDAgMSAwIDAgMjU2em0tNDUuNyA0OEM3OS44IDMwNCAwIDM4My44IDAgNDgyLjNDMCA0OTguNyAxMy4zIDUxMiAyOS43IDUxMmwzODguNiAwYzE2LjQgMCAyOS43LTEzLjMgMjkuNy0yOS43QzQ0OCAzODMuOCAzNjguMiAzMDQgMjY5LjcgMzA0bC05MS40IDB6Ii8+PC9zdmc+');
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  background-position: 0 50%;
 }
 
 
@@ -529,65 +569,6 @@ li {
     background-color: #B00101;
     transform: scale(1);
   }
-}
-
-heart-container {
-   position: absolute;
-   top: -20px; /* Position above the button */
-   left: 50%;
-   transform: translateX(-50%);
-   pointer-events: none;
-   width: 100%;
- }
-
-.heart-container {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  width: 100%;
-  height: 100px; /* Ensure some height for the container */
-  z-index: 10;
-}
-
-.heart {
-  position: absolute;
-  width: 1em;
-  height: 1em;
-  background-color: red;
-  transform: rotate(45deg);
-  animation: floatUp 1s ease forwards, fadeOut 1s ease forwards;
-  opacity: 0.8;
-  pointer-events: none;
-}
-
-@keyframes floatUp {
-  0% {
-    transform: translateY(0) rotate(45deg);
-  }
-  100% {
-    transform: translateY(-50px) rotate(45deg); /* Adjust floating distance */
-  }
-}
-
-@keyframes fadeOut {
-  0% {
-    opacity: 0.8;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes floatUp {
-  0% { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-2em) scale(1.5); }
-}
-
-@keyframes fadeOut {
-  0% { opacity: 0.8; }
-  100% { opacity: 0; }
 }
 
 .badge {
