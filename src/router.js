@@ -27,7 +27,6 @@ const routes = [
         path: '/',
         name: 'Home',
         component: Home,
-        //meta: { requiresAuth: false },
     },
     {
         path: '/createEvent',
@@ -49,7 +48,6 @@ const routes = [
         path: '/parksoverview',
         name: 'ParksOverview',
         component: ParksOverview,
-        //meta: { requiresAuth: true },
         props: true
     },
     {
