@@ -1,7 +1,7 @@
 <script setup>
 import {computed, onMounted, ref} from 'vue';
 import axios from 'axios';
-import { fetchUserData } from "@/service/authService.js";
+import { fetchUserIdAndRole } from "@/service/authService.js";
 import { useRouter } from 'vue-router';
 import { API_ROUTES } from "@/apiRoutes.js";
 
@@ -354,7 +354,7 @@ const submitForm = async (event) => {
       await uploadMediaFiles();
     }
 
-    const userData = await fetchUserData();
+    const userData = await fetchUserIdAndRole();
     if (!userData || !userData.id) {
       console.error('User is not authenticated.');
       return;

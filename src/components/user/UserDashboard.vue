@@ -1,11 +1,12 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 import axios from 'axios';
 import CountryService from "@/service/countryService.js";
-import {fetchUserData} from "@/service/authService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
 import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
+import store from "@/store/index.js";
+import {fetchUserIdAndRole} from "@/service/authService.js";
 
 // Declare your refs and other variables here
 
@@ -56,7 +57,7 @@ const showErrorPopup = ref(false);
 const fetchUserProfileAndEvents = async () => {
   try {
     // Fetch the logged-in user's profile
-    const userData = await fetchUserData();
+    const userData = await fetchUserIdAndRole();
     if (userData) {
       const userId = userData.id;
       const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId), {
@@ -78,7 +79,6 @@ const fetchUserProfileAndEvents = async () => {
         try {
           const profilePictureResponse = await axios.get(API_ROUTES.FILES_BY_EXTERNAL_ID(profilePictureId.value), {
             responseType: 'blob', // Ensures it's treated as binary data
-            withCredentials: true
           });
 
           // Convert the blob to an object URL for display
@@ -92,7 +92,7 @@ const fetchUserProfileAndEvents = async () => {
       }
 
       // Fetch the user's events
-      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id), { withCredentials: true });
+      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id));
       if (eventsResponse && eventsResponse.data && Array.isArray(eventsResponse.data)) {
         events.value = eventsResponse.data;
       } else {
@@ -194,7 +194,6 @@ const updateProfile = async () => {
       const formData = new FormData();
       formData.append("file", selectedProfilePictureFile.value);
       const uploadResponse = await axios.post(API_ROUTES.MINIO, formData, {
-        withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -215,12 +214,12 @@ const updateProfile = async () => {
       gender: gender.value?.toUpperCase() ?? null,
       email: email.value,
       userName: username.value,
-      id: userid.value,
+      id: store.state.userId,
       countryId: country.value,
       profilePictureId: newProfilePictureId, // Use the new profile picture ID, if uploaded
     };
 
-    const response = await axios.put(API_ROUTES.USERS_BY_ID(userid.value), formData, {
+    const response = await axios.put(API_ROUTES.USERS_BY_ID(formData.id), formData, {
       withCredentials: true,
     });
 
@@ -235,6 +234,12 @@ const updateProfile = async () => {
       showFlashMessage.value = false;
       showSuccessPopup.value = false;
     }, 3000);
+
+    // Emit event to update Navbar
+    const event = new CustomEvent('profilePictureUpdated', { detail: profilePictureUrl.value });
+    window.dispatchEvent(event);
+
+
   } catch (error) {
     console.error('Failed to update profile:', error);
     alert('Error updating profile.');
@@ -281,6 +286,12 @@ onMounted(async () => {
   countries.value = await CountryService.getCountries();
   await fetchUserProfileAndEvents();
 });
+
+// Watch for changes in profilePictureUrl and emit event
+watch(profilePictureUrl, (newUrl) => {
+  const event = new CustomEvent('profilePictureUpdated', { detail: newUrl });
+  window.dispatchEvent(event);
+});
 </script>
 
 
@@ -304,8 +315,8 @@ onMounted(async () => {
               <div class="mt-3">
                 <!-- Show the profile picture if available -->
                 <div v-if="profilePictureUrl">
-                  <img :src="profilePictureUrl" :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'" class="img-thumbnail" width="150">
-                  <button type="button" class="btn btn-danger mt-2" @click="resetProfilePicture">Delete Picture</button>
+                  <img  :src="profilePictureUrl" :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'" class="img-thumbnail profile-picture" width="150">
+                  <button v-if="profilePictureId" type="button" class="btn btn-danger mt-2" @click="resetProfilePicture">Delete Picture</button>
                 </div>
                 <!-- Show error message if there's an error fetching the profile picture -->
                 <p v-else-if="profilePictureError" class="text-danger">{{ profilePictureError }}</p>
@@ -401,5 +412,10 @@ onMounted(async () => {
 .flash-message {
   color: green;
   font-weight: bold;
+}
+
+.profile-picture {
+  margin-right: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 </style>

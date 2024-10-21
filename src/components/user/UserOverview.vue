@@ -54,7 +54,7 @@ const pageSize = 2;            // Number of users per page
 // Function to fetch users
 async function fetchUsers() {
   try {
-    const response = await axios.get(API_ROUTES.USERS, { withCredentials: true });
+    const response = await axios.get(API_ROUTES.USERS);
     const fetchedUsers = response.data;
 
     // Fetch profile pictures for each user

@@ -51,7 +51,7 @@ const paginatedFiles = computed(() => {
 // Fetch users and events on component mount
 const fetchUsers = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/users', {withCredentials: true}); // Ensure endpoint is correct
+    const response = await axios.get('http://localhost:8080/users'); // Ensure endpoint is correct
     users.value = response.data;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -85,7 +85,6 @@ const fetchMediaFiles = async () => {
     const mediaRequests = mediaIds.map(id =>
         axios.get(`http://localhost:8080/files/${id}`, {
           responseType: 'blob', // Ensure the response is a binary blob
-          withCredentials: true // Include credentials if needed (cookies or auth headers)
         })
     );
 

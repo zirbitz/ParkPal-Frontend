@@ -1,5 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { isAuthenticated, isAdmin } from '@/service/authService.js';
+import {createRouter, createWebHistory} from 'vue-router';
 
 // Import your components
 import CreateEvent from '@/components/event/CreateEvent.vue';
@@ -19,6 +18,7 @@ import UpdateEvent from '@/components/event/EditEvent.vue';
 import CreatePark from "@/components/park/CreatePark.vue";
 import EditPark from "@/components/park/EditPark.vue";
 import PublicUserProfile from "@/components/user/PublicUserProfile.vue";
+import store from "@/store/index.js";
 
 
 // Routes configuration
@@ -27,6 +27,7 @@ const routes = [
         path: '/',
         name: 'Home',
         component: Home,
+        //meta: { requiresAuth: false },
     },
     {
         path: '/createEvent',
@@ -48,7 +49,7 @@ const routes = [
         path: '/parksoverview',
         name: 'ParksOverview',
         component: ParksOverview,
-        meta: { requiresAuth: true },
+        //meta: { requiresAuth: true },
         props: true
     },
     {
@@ -94,7 +95,7 @@ const routes = [
         path: '/adminDashboard',
         name: 'AdminDashboard',
         component: AdminDashboard,
-        meta: { requiresAuth: true, requiresAdmin: true },
+        meta: {requiresAdmin: true },
     },
     {
         path: '/impressum',
@@ -130,27 +131,19 @@ const router = createRouter({
 
 // Global navigation guard
 router.beforeEach(async (to, from, next) => {
-    // Check if the route requires authentication
-    if (to.matched.some((record) => record.meta.requiresAuth)) {
-        const authenticated = await isAuthenticated(); // Wait for the authentication check
-        if (!authenticated) {
-           next('/login'); // Redirect to login if not authenticated
-        } else {
-            // Check if the route requires admin privileges
-            if (to.matched.some((record) => record.meta.requiresAdmin)) {
-                const admin = await isAdmin(); // Wait for the admin check
-                if (admin) {
-                    next(); // Proceed to the admin route
-                } else {
-                    next('/'); // Redirect non-admins to home
-                }
-            } else {
-                next(); // If no admin check is needed, proceed normally
-            }
-        }
-    } else {
-        next(); // Proceed normally if no auth is required
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+    const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin);
+
+    if (requiresAuth && !store.state.isAuthenticated) {
+        return next({ name: 'Login' });
     }
+
+    if (requiresAdmin && !store.state.isAdmin) {
+        return next({ name: 'Home' });
+    }
+
+    next();
+
 });
 
 export default router;

@@ -15,7 +15,7 @@
         If you're set on leaving, we’ll be here when you’re ready to come back!
       </p>
       <div class="action-buttons">
-        <button @click="logout" class="btn btn-danger">
+        <button @click="handleLogout" class="btn btn-danger">
           <i class="fas fa-sign-out-alt"></i> Yes, Log me out
         </button>
         <button @click="navigateToEventOverview" class="btn btn-secondary">
@@ -27,20 +27,13 @@
 </template>
 
 <script>
-import axios from 'axios';
-import {isAdmin, isAuthenticated} from "@/service/authService.js";
-import {API_ROUTES} from "@/apiRoutes.js";
+import {mapActions} from "vuex";
 
 export default {
-  computed: {
-    isAuthenticated() {
-      return isAuthenticated();
-    },
-    isAdmin() {
-      return isAdmin();
-    }
-  },
   methods: {
+    ...mapActions({
+      logoutAction: 'logout'
+    }),
     showLogoutSection() {
       this.showLogoutInfo = true;
     },
@@ -51,23 +44,12 @@ export default {
       this.closeLogoutSection();
       this.$router.push('/eventOverview');
     },
-    async logout() {
-      if (this.isAuthenticated) {
-        try {
-          await axios.post(
-              API_ROUTES.AUTH_LOGOUT,
-              "",
-              { withCredentials: true }
-          );
-          localStorage.removeItem("token");
-          sessionStorage.removeItem("token");
-          document.cookie = "token=; Max-Age=0; path=/";
-          window.location.href = '/login';
-        } catch (error) {
-          console.error('Error during logout:', error);
-        }
-      } else {
-        console.log("User is already logged out or not authenticated.");
+    async handleLogout() {
+      try {
+        await this.logoutAction();
+        this.$router.push({name: 'Login'});
+      } catch (error) {
+        console.error('Error during logout:', error);
       }
       this.closeLogoutSection();
     }

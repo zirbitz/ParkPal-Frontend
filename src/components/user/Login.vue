@@ -47,7 +47,6 @@
                   </button>
                 </div>
 
-
                 <div v-if="passwordError" class="text-danger">{{ passwordError }}</div>
               </div>
 
@@ -108,8 +107,7 @@
 </template>
 
 <script>
-import axios from 'axios';
-import {API_ROUTES} from "@/apiRoutes.js";
+import {mapActions} from "vuex";
 
 export default {
   data() {
@@ -125,6 +123,7 @@ export default {
     };
   },
   methods: {
+    ...mapActions(['login']),
     togglePasswordVisibility() {
       this.showPassword = !this.showPassword;
     },
@@ -156,11 +155,9 @@ export default {
       };
 
       try {
-        const response = await axios.post(API_ROUTES.AUTH_LOGIN, loginData, {
-          withCredentials: true
-        });
 
-        window.location.href = '/eventOverview';
+        const response = await this.login(loginData);
+        this.$router.push({name: 'EventOverview'});
 
       } catch (error) {
         if (error.response) {

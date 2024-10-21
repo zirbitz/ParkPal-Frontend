@@ -30,7 +30,7 @@
     <div class="card-body">
       <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
       <h6 class="card-text">
-        <router-link :to="`/parkoverview/`">{{ parkName }}</router-link>
+        <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
         <p>{{ fullAddress }}</p>
       </h6>
       <p class="card-text">{{ event.description || 'No description available' }}</p>
@@ -61,11 +61,12 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
-import { fetchUserData } from '@/service/authService.js';
-import { useRouter } from "vue-router";
+import {onMounted, ref} from 'vue';
+import {fetchUserIdAndRole} from '@/service/authService.js';
+import {useRouter} from "vue-router";
 import axios from "axios";
-import { API_ROUTES } from "@/apiRoutes.js";
+import {API_ROUTES} from "@/apiRoutes.js";
+import placeholderImage from '/src/assets/images/people.png';
 
 // Accept event as a prop
 const props = defineProps({
@@ -208,7 +209,6 @@ const prevSlide = () => {
   currentSlide.value = (currentSlide.value - 1 + eventImageUrls.value.length) % eventImageUrls.value.length;
 };
 
-import placeholderImage from '/src/assets/images/people.png';
 // Function to fetch the event images
 const fetchEventImages = async (mediaFileIds) => {
   try {
@@ -303,7 +303,7 @@ const emitHeart = () => {
 // Fetch user data, creator username, joined users, and event media files on component mount
 onMounted(async () => {
   try {
-    const userData = await fetchUserData();
+    const userData = await fetchUserIdAndRole();
     if (userData && userData.id) {
       userId.value = userData.id;
     } else {
