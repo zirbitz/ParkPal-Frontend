@@ -193,6 +193,7 @@ const updateProfile = async () => {
     if (selectedProfilePictureFile.value) {
       const formData = new FormData();
       formData.append("file", selectedProfilePictureFile.value);
+      formData.append("fileType", 'PROFILE_PICTURE');
       const uploadResponse = await axios.post(API_ROUTES.MINIO, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'

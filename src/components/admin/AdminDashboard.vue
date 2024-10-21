@@ -58,49 +58,84 @@ const fetchUsers = async () => {
   }
 };
 
-// TODO: get Userdata from here to work bc users.value is empty but users are not!
 const fetchMediaFiles = async () => {
   try {
-    console.log(users)
-    console.log(users.value)
+    // Fetch users and events data to associate media files with their owners
+    const [usersResponse, eventsResponse] = await Promise.all([
+      axios.get('http://localhost:8080/users'),
+      axios.get('http://localhost:8080/events', { withCredentials: true })
+    ]);
 
-    // Extract unique media file IDs from both mediaIds and profilePictureIds, flattening and removing duplicates
-    const mediaIds = [...new Set(
-        users.value
-            .map(user => [
-              ...(user.mediaIds || []), // Safely include mediaIds array
-              user.profilePictureId || null // Include profilePictureId only if it exists
-            ])
-            .reduce((acc, curr) => acc.concat(curr), []) // Flatten the array
-            .filter(id => id) // Filter out null or undefined values
-    )];
+    users.value = usersResponse.data;
+    events.value = eventsResponse.data;
 
-    if (mediaIds.length === 0) {
-      console.log("No media IDs found for any user.");
+    // Extract unique media file IDs from users' profilePictureIds and events' mediaFileExternalIds
+    const userMediaIds = users.value
+        .map(user => ({
+          id: user.profilePictureId || null,
+          userName: user.userName, // Add username to each file
+          usage: 'profilePicture'  // Indicate this file is used as a profile picture
+        }))
+        .filter(file => file.id); // Remove null or undefined IDs
+
+    const eventMediaIds = events.value
+        .map(event => ({
+          ids: event.mediaFileExternalIds || [], // Ensure mediaFileExternalIds is an array
+          userName: event.creatorName, // Add the creator's name as the userName
+          usage: 'eventPicture'  // Indicate this file is used in an event
+        }))
+        .reduce((acc, event) => acc.concat(event.ids.map(id => ({ id, userName: event.userName, usage: 'eventPicture' }))), []);
+
+    // Combine both user and event media IDs, marking files used in both contexts
+    const mediaFileUsage = {};
+    userMediaIds.forEach(file => {
+      if (!mediaFileUsage[file.id]) {
+        mediaFileUsage[file.id] = { ...file, usage: 'profilePicture' };
+      } else {
+        mediaFileUsage[file.id].usage = 'both'; // Mark as used for both profile and event
+      }
+    });
+
+    eventMediaIds.forEach(file => {
+      if (!mediaFileUsage[file.id]) {
+        mediaFileUsage[file.id] = { ...file, usage: 'eventPicture' };
+      } else {
+        mediaFileUsage[file.id].usage = mediaFileUsage[file.id].usage === 'profilePicture' ? 'both' : 'eventPicture';
+      }
+    });
+
+    // Create a list of unique media files
+    const allMediaFiles = Object.values(mediaFileUsage);
+
+    if (allMediaFiles.length === 0) {
+      console.log("No media files found.");
       mediaFiles.value = [];
       return;
     }
 
-    // Fetch media files for each ID with response type 'blob' to handle binary data like images
-    const mediaRequests = mediaIds.map(id =>
-        axios.get(`http://localhost:8080/files/${id}`, {
-          responseType: 'blob', // Ensure the response is a binary blob
-        })
+    // Fetch media files for each ID
+    const mediaRequests = allMediaFiles.map(file =>
+        axios.get(`http://localhost:8080/files/${file.id}`, {
+          responseType: 'blob',
+        }).then(res => ({
+          id: file.id,
+          url: URL.createObjectURL(res.data),
+          mimeType: res.headers['content-type'],
+          userName: file.userName, // Add the associated userName to each media file
+          usage: file.usage // Track the file's usage (profile, event, or both)
+        }))
     );
 
-    const mediaResponses = await Promise.all(mediaRequests);
+    mediaFiles.value = await Promise.all(mediaRequests);
 
-
-    mediaFiles.value = mediaResponses.map((res, index) => ({
-      id: mediaIds[index], // Storing the corresponding file ID
-      url: URL.createObjectURL(res.data),
-      mimeType: res.headers['content-type']
-    }));
-
+    console.log("Fetched media files with usage details:", mediaFiles.value);
   } catch (error) {
     console.error("Error fetching media files:", error);
   }
 };
+
+
+
 const isImage = (mimeType) => {
   return mimeType.startsWith('image/');
 };
@@ -222,9 +257,9 @@ const clearSearch = () => {
 
 // Fetch users and events when component is mounted
 onMounted(async () => {
-  await fetchUsers();  // Ensure users are fetched first
-  fetchMediaFiles();   // Now call fetchMediaFiles after users are loaded
-  fetchEvents();       // Fetch events as usual
+  await fetchUsers();
+  fetchEvents();
+  fetchMediaFiles();
 });
 </script>
 
@@ -295,17 +330,23 @@ onMounted(async () => {
                 <tr>
                   <th>Preview</th>
                   <th>File Type</th>
+                  <th>User</th>
+                  <th>Usage</th>
                   <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-for="(file, index) in paginatedFiles" :key="index">
+                <tr class="text-center" v-for="(file, index) in paginatedFiles" :key="index">
                   <td>
                     <img v-if="isImage(file.mimeType)" :src="file.url" class="img-thumbnail" width="100" alt="File Preview">
                     <video v-if="isVideo(file.mimeType)" :src="file.url" class="video-preview" width="100" controls></video>
                   </td>
                   <td>{{ file.mimeType }}</td>
+                  <td>{{ file.userName }}</td>
                   <td>
+                    {{ file.usage === 'both' ? 'Profile & Event Picture' : file.usage === 'profilePicture' ? 'Profile Picture' : 'Event Picture' }}
+                  </td>
+                  <td class="text-center">
                     <button class="btn btn-danger btn-sm" @click="deleteFile(index)">Delete</button>
                   </td>
                 </tr>

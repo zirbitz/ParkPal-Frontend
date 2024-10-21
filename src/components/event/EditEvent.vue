@@ -290,18 +290,24 @@ const createObjectURL = (file) => {
 // Helper function to upload media files to Minio
 const uploadMediaFiles = async () => {
   const uploadedIds = [];
+
   for (const file of mediaFiles.value) {
     if (file.previewUrl) {
       // Upload only new media files (ones with previewUrl)
       const formData = new FormData();
       formData.append("file", file);
 
+      // Check if MIME type is an image to apply FileType.PHOTO
+      const mimeType = file.type;
+      const fileType = mimeType.startsWith('image/') ? 'PHOTO' : 'OTHER'; // Assuming PHOTO for images, OTHER for anything else
+      formData.append('fileType', fileType);
+
       try {
         const response = await axios.post(API_ROUTES.MINIO, formData, {
           withCredentials: true,
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+            'Content-Type': 'multipart/form-data',
+          },
         });
 
         uploadedIds.push(response.data); // Collect the uploaded media file IDs
@@ -310,8 +316,10 @@ const uploadMediaFiles = async () => {
       }
     }
   }
+
   updateMediaFileIds.value = uploadedIds; // Store uploaded media file IDs
 };
+
 
 const toggleTagSelection = (event) => {
   try {
@@ -407,7 +415,7 @@ const submitForm = async (event) => {
 
 <template>
   <div class="container mt-4">
-    <h1 class="text-center">Update Event</h1>
+    <h1 class="text-center">Edit Event</h1>
     <hr>
     <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
       Please fill in all required fields before submitting.
@@ -491,9 +499,6 @@ const submitForm = async (event) => {
         <div class="col-md-6">
           <button type="button" class="btn btn-tertiary" @click="deleteEvent">Delete Event</button>
         </div>
-      </div>
-      <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
-        Event updated successfully!
       </div>
       <div v-if="showDeletePopup" class="alert alert-danger mt-3" role="alert">
         Event deleted successfully!

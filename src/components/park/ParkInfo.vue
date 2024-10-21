@@ -142,8 +142,9 @@ const nextPage = () => {
 }
 
 .card{
-  transform: scale(0.75);
+  transform: scale(0.89);
   transform-origin: center;
+  margin-bottom: unset;
 }
 </style>
 
