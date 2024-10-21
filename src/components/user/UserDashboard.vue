@@ -1,5 +1,5 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 import axios from 'axios';
 import CountryService from "@/service/countryService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -178,6 +178,12 @@ const updateProfile = async () => {
     setTimeout(() => {
       showFlashMessage.value = false;
     }, 3000);
+
+    // Emit event to update Navbar
+    const event = new CustomEvent('profilePictureUpdated', { detail: profilePictureUrl.value });
+    window.dispatchEvent(event);
+
+
   } catch (error) {
     console.error('Failed to update profile:', error);
     alert('Error updating profile.');
@@ -223,6 +229,12 @@ const resetProfilePicture = async () => {
 onMounted(async () => {
   countries.value = await CountryService.getCountries();
   await fetchUserProfileAndEvents();
+});
+
+// Watch for changes in profilePictureUrl and emit event
+watch(profilePictureUrl, (newUrl) => {
+  const event = new CustomEvent('profilePictureUpdated', { detail: newUrl });
+  window.dispatchEvent(event);
 });
 </script>
 

@@ -133,6 +133,11 @@ async function fetchAuthStatus() {
 // Hook to call the fetchAuthStatus function when the component is mounted
 onMounted(() => {
   fetchAuthStatus();
+
+  // Listen for profilePictureUpdated event
+  window.addEventListener('profilePictureUpdated', (event) => {
+    profilePictureUrl.value = event.detail;
+  });
 });
 
 // Watch for changes in the authentication state
