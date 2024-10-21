@@ -5,7 +5,9 @@ import CountryService from "@/service/countryService.js";
 import {API_ROUTES} from "@/apiRoutes.js";
 import router from "@/router.js";
 import EventCard from "@/components/event/EventCard.vue";
-import {useStore} from "vuex";
+import store from "@/store/index.js";
+
+// Declare your refs and other variables here
 
 // Profile Data
 const user = ref(null);
@@ -26,7 +28,7 @@ const showFlashMessage = ref(false);
 const flashMessageText = ref('');
 const selectedProfilePictureFile = ref(null); // Store the selected file temporarily
 const fileInputRef = ref(null); // Ref for file input
-
+const showSuccessPopup = ref(false);
 // Events Data
 const events = ref([]);
 const eventPage = ref(1);
@@ -39,15 +41,27 @@ const paginatedEvents = computed(() => {
   return events.value.slice(start, start + eventsPerPage.value);
 });
 
-// Vuex store
-const store = useStore();
+// ** Validations for all form fields **
+const isFirstNameValid = computed(() => firstName.value.trim() !== '');
+const isLastNameValid = computed(() => lastName.value.trim() !== '');
+const isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)); // Email regex validation
+const isUsernameValid = computed(() => username.value.trim() !== '');
+const isCountryValid = computed(() => country.value !== '');
+const isSalutationValid = computed(() => salutation.value.trim() !== '');
+const isGenderValid = computed(() => gender.value !== '');
+
+// Reactive state for the error popup
+const showErrorPopup = ref(false);
 
 const fetchUserProfileAndEvents = async () => {
   try {
     // Fetch the logged-in user's profile
-    const userId = store.state.userId;
-    if (userId) {
-      const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId));
+    const userData = await fetchUserData();
+    if (userData) {
+      const userId = userData.id;
+      const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId), {
+        withCredentials: true,
+      });
       user.value = userResponse.data;
       userid.value = user.value.id;
       firstName.value = user.value.firstName;
@@ -77,7 +91,7 @@ const fetchUserProfileAndEvents = async () => {
       }
 
       // Fetch the user's events
-      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userId));
+      const eventsResponse = await axios.get(API_ROUTES.EVENTS_WITH_OPTIONAL_PARAMS(userData.id));
       if (eventsResponse && eventsResponse.data && Array.isArray(eventsResponse.data)) {
         events.value = eventsResponse.data;
       } else {
@@ -87,6 +101,23 @@ const fetchUserProfileAndEvents = async () => {
   } catch (error) {
     console.error('Failed to fetch user or events data:', error);
   }
+};
+
+// Validate inputs before updating profile
+const validateAndUpdateProfile = () => {
+  // Validate inputs before updating profile
+  if (firstName.value.trim() === '' || lastName.value.trim() === '' ||
+      !isEmailValid.value || username.value.trim() === '' ||
+      !isCountryValid.value || !isSalutationValid.value ||
+      !isGenderValid.value) {
+    showFlashMessage.value = true;
+    flashMessageText.value = 'Please fill in all required fields correctly.';
+    setTimeout(() => {
+      showFlashMessage.value = false;
+    }, 3000);
+    return;
+  }
+  updateProfile();
 };
 
 // Pagination functions for events
@@ -135,6 +166,25 @@ const updateEvent = (index) => {
 
 // Update profile (including profile picture upload if applicable)
 const updateProfile = async () => {
+
+  if (
+      !isFirstNameValid.value ||
+      !isLastNameValid.value ||
+      !isEmailValid.value ||
+      !isUsernameValid.value ||
+      !isCountryValid.value ||
+      !isSalutationValid.value ||
+      !isGenderValid.value
+  ) {
+    // Show error message or handle invalid input
+    showErrorPopup.value = true;
+    setTimeout(() => {
+      showErrorPopup.value = false;
+    }, 3000);
+    window.scrollTo(0, 0);
+    return;
+  }
+
   try {
     let newProfilePictureId = profilePictureId.value;
 
@@ -174,9 +224,14 @@ const updateProfile = async () => {
 
     user.value = response.data;
     showFlashMessage.value = true;
-    flashMessageText.value = 'Profile updated successfully';
+    showSuccessPopup.value = true;
+
+
+    window.scrollTo(0, 0);
+
     setTimeout(() => {
       showFlashMessage.value = false;
+      showSuccessPopup.value = false;
     }, 3000);
 
     // Emit event to update Navbar
@@ -243,20 +298,22 @@ watch(profilePictureUrl, (newUrl) => {
   <div class="container">
     <h1>My UserProfile</h1>
     <hr>
-    <div v-if="showFlashMessage" class="flash-message">
-      {{ flashMessageText }}
+    <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
+      Enter all the required fields.
+    </div>
+    <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
+      Profile updated successfully
     </div>
     <div v-if="user">
       <div class="row">
         <div class="col-12 col-md-6">
           <h2>User Profile</h2>
-          <form @submit.prevent="updateProfile">
-
+          <form  @submit.prevent="updateProfile">
             <div class="mb-3">
               <label for="profilePicture" class="form-label">Profile Picture</label>
               <div class="mt-3">
                 <!-- Show the profile picture if available -->
-                <div v-if="profilePictureUrl && profilePictureUrl.trim() !== ''">
+                <div v-if="profilePictureUrl">
                   <img  :src="profilePictureUrl" :alt="user ? user.userName + '\'s Profile Picture' : 'Profile Picture'" class="img-thumbnail profile-picture" width="150">
                   <button v-if="profilePictureId" type="button" class="btn btn-danger mt-2" @click="resetProfilePicture">Delete Picture</button>
                 </div>
@@ -270,35 +327,43 @@ watch(profilePictureUrl, (newUrl) => {
 
             <div class="mb-3">
               <label for="firstName" class="form-label">First Name</label>
-              <input type="text" class="form-control" id="firstName" v-model="firstName">
+              <input type="text" class="form-control" id="firstName" v-model="firstName" :class="{ 'is-invalid': !isFirstNameValid }">
+              <p v-if="!isFirstNameValid" class="text-danger">First name is required.</p>
             </div>
             <div class="mb-3">
               <label for="lastName" class="form-label">Last Name</label>
-              <input type="text" class="form-control" id="lastName" v-model="lastName">
+              <input type="text" class="form-control" id="lastName" v-model="lastName" :class="{ 'is-invalid': !isLastNameValid }">
+              <p v-if="!isLastNameValid" class="text-danger">Last name is required.</p>
             </div>
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" v-model="email">
+              <input type="email" class="form-control" id="email" v-model="email" :class="{ 'is-invalid': !isEmailValid }">
+              <p v-if="!isEmailValid" class="text-danger">Please enter a valid email address.</p>
             </div>
             <div class="mb-3">
               <label for="username" class="form-label">Username</label>
-              <input type="text" class="form-control" id="username" v-model="username">
+              <input type="text" class="form-control" id="username" v-model="username" :class="{ 'is-invalid': !isUsernameValid }">
+              <p v-if="!isUsernameValid" class="text-danger">Username is required.</p>
             </div>
             <div class="mb-3">
               <label for="country" class="form-label">Country</label>
               <select class="form-select" id="country" v-model="country">
                 <option v-for="country in countries" :key="country.id" :value="country.id">{{ country.name }}</option>
               </select>
+              <p v-if="!isCountryValid" class="text-danger">Please select a country.</p>
             </div>
             <div class="mb-3">
               <label for="salutation" class="form-label">Salutation</label>
-              <input type="text" class="form-control" id="salutation" v-model="salutation">
+              <input type="text" class="form-control" id="salutation" v-model="salutation" :class="{ 'is-invalid': !isSalutationValid}">
+              <p v-if="!isSalutationValid" class="text-danger">Please enter a salutation.</p>
             </div>
             <div class="mb-3">
               <label for="gender" class="form-label">Gender</label>
-              <select class="form-select" id="gender" v-model="gender">
+              <select class="form-select" id="gender" v-model="gender" :class="{ 'is-invalid': !isGenderValid}">
+                <option value="">Select Gender</option>
                 <option v-for="option in genderOptions" :key="option" :value="option">{{ option }}</option>
               </select>
+              <p v-if="!isGenderValid" class="text-danger">Please select a gender.</p>
             </div>
             <div class="col btn-col text-center">
               <button type="submit" class="btn btn-primary">Update Profile</button>
