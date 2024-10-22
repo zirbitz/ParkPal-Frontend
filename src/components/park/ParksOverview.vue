@@ -70,14 +70,18 @@ const closeModal = () => {
   selectedPark.value = null;
 };
 
-// Computed property for filtering parks
 const filteredParks = computed(() => {
   const query = searchQuery.value.toLowerCase();
   if (!query) return parks.value;
 
   return parks.value.filter(park => {
     const parkName = park.name ? park.name.toLowerCase() : '';
-    const parkAddress = park.address ? park.address.toLowerCase() : '';
+
+    // Check if address object exists and concatenate its components
+    const parkAddress = park.address
+        ? `${park.address.streetNumber || ''} ${park.address.zipCode || ''} ${park.address.city || ''} ${park.address.country?.name || ''}`.toLowerCase()
+        : '';
+
     return parkName.includes(query) || parkAddress.includes(query);
   });
 });

@@ -5,13 +5,14 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import { onMounted, ref } from 'vue';
 import axios from 'axios';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const parks = ref([]);
 const map = ref(null);
+const mapBounds = ref(L.latLngBounds([])); // To store bounds of all parks
 
 // Fetch parks data along with events
 const fetchParks = async () => {
@@ -85,17 +86,23 @@ const initMap = () => {
   parks.value.forEach(park => {
     if (park.lat && park.lng) {
       const marker = L.marker([park.lat, park.lng]).addTo(map.value);
+      mapBounds.value.extend([park.lat, park.lng]); // Add park location to the bounds
+
+      // Filter to show only the two most upcoming events
+      const upcomingEvents = park.events
+          .sort((a, b) => new Date(a.startTS) - new Date(b.startTS))
+          .slice(0, 2); // Limit to two events
 
       // Prepare the popup content with event details
-      let eventsContent = '<strong>Events:</strong><br>';
-      if (park.events && park.events.length > 0) {
+      let eventsContent = '<strong>Upcoming Events:</strong><br>';
+      if (upcomingEvents.length > 0) {
         eventsContent += '<ul>';
-        park.events.forEach(event => {
+        upcomingEvents.forEach(event => {
           eventsContent += `
             <li>
               <strong>${event.title}</strong><br>
               ${new Date(event.startTS).toLocaleDateString()} - ${new Date(event.endTS).toLocaleDateString()}<br>
-              ${event.description}<br><br>
+              <p class="event-description">${event.description}</p><br><br>
             </li>
           `;
         });
@@ -123,6 +130,11 @@ const initMap = () => {
       console.warn(`Skipping park with missing coordinates: ${park.name}`);
     }
   });
+
+  // Fit the map to the bounds of all parks
+  if (mapBounds.value.isValid()) {
+    map.value.fitBounds(mapBounds.value);
+  }
 };
 
 // Initialize the map and fetch parks on component mount
@@ -136,5 +148,10 @@ onMounted(async () => {
 #map {
   height: 500px;
   width: 100%;
+}
+
+.event-description{
+  font-size: 12px;
+  margin-top: 2px;
 }
 </style>

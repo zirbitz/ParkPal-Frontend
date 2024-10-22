@@ -489,6 +489,7 @@ const submitForm = async (event) => {
       <div class="mb-3">
         <label for="park" class="form-label">Select Park</label>
         <select class="form-select" id="park" v-model="selectedParkId" :class="{ 'is-invalid': !isParkSelected }">
+          <option selected disabled value="">Please select a Park</option>
           <option v-for="park in parks" :key="park.id" :value="park.id">{{ park.name }}</option>
         </select>
         <p v-if="!isParkSelected" class="text-danger">{{ startTimeValidationMessage }}</p>

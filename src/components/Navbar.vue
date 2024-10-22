@@ -42,7 +42,18 @@
             <router-link :to="{name:'AdminDashboard'}" class="nav-link">Admin</router-link>
           </li>
           <li class="nav-item" v-if="authStatus.isAuthenticated">
-            <router-link :to="{ name: 'Logout' }" class="nav-link">Logout</router-link>
+            <button @click="showLogoutSection" class="nav-link btn btn-link">
+              Logout
+            </button>
+            <div v-if="showLogoutInfo" class="confirmation-box">
+              <div class="confirmation-content">
+                <div class="action-buttons">
+                  <button @click="handleLogout" class="btn btn-danger mb-3">
+                    <i class="fas fa-sign-out-alt"></i> Confirm Logout
+                  </button>
+                </div>
+              </div>
+            </div>
           </li>
 
           <li class="nav-item dropdown" v-else>
@@ -75,16 +86,17 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import axios from 'axios';
-import {API_ROUTES} from '@/apiRoutes.js';
-import {useStore} from "vuex";
+import { API_ROUTES } from '@/apiRoutes.js';
+import { useStore } from "vuex";
 
 // Track auth status and profile picture URL
 const store = useStore();
-
 const profilePictureUrl = ref(null);
 const user = ref(null);
+const showLogoutInfo = ref(false); // Control the visibility of the confirmation box
+const authStatus = store.state;
 
 // Function to fetch user data by userId
 async function fetchUserById(userId) {
@@ -96,8 +108,6 @@ async function fetchUserById(userId) {
     return null;
   }
 }
-
-const authStatus = store.state;
 
 // Function to fetch auth status and user details
 async function fetchAuthStatus() {
@@ -146,6 +156,26 @@ watch(() => store.state.isAuthenticated, (newVal, oldVal) => {
     fetchAuthStatus();
   }
 });
+
+// Logout Functions
+async function handleLogout() {
+  try {
+    await store.dispatch('logout'); // Perform logout action
+    await fetchAuthStatus(); // Update auth status after logout
+    this.$router.push({ name: 'Login' }); // Redirect to Login
+  } catch (error) {
+    console.error('Error during logout:', error);
+  }
+  closeLogoutSection(); // Close confirmation box
+}
+
+function showLogoutSection() {
+  showLogoutInfo.value = true; // Show the confirmation box
+}
+
+function closeLogoutSection() {
+  showLogoutInfo.value = false; // Hide the confirmation box
+}
 </script>
 
 <style scoped>

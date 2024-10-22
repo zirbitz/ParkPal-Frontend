@@ -97,7 +97,7 @@
               @change="validateCountry"
               :class="['form-select', errors.country ? 'is-invalid' : '']"
           >
-            <option value="">Select a country</option>
+            <option selected disabled value="">Select a country</option> <!-- Placeholder option -->
             <option v-for="country in countries" :key="country.id" :value="country.name">
               {{ country.name }}
             </option>
