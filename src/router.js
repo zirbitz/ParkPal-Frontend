@@ -19,6 +19,7 @@ import CreatePark from "@/components/park/CreatePark.vue";
 import EditPark from "@/components/park/EditPark.vue";
 import PublicUserProfile from "@/components/user/PublicUserProfile.vue";
 import store from "@/store/index.js";
+import EventDetail from "@/components/event/EventDetail.vue";
 
 
 // Routes configuration
@@ -112,6 +113,12 @@ const routes = [
         component: UpdateEvent,
         props: true,
         meta: { requiresAuth: true },
+    },
+    {
+        path: '/event/:eventId',
+        name: 'EventDetail',
+        component: EventDetail,
+        props: true,
     },
     {
         path: '/userprofile/:userId',
