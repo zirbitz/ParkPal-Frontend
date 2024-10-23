@@ -1,18 +1,14 @@
 <template>
   <router-link
       :to="{ name: 'EventDetail', params: { eventId: event.id } }"
+      target="_blank"
       class=""
   >
     <div class="card-container">
       <div class="card" :style="{ color: textColor, maxWidth: cardWidth }">
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
-            <p v-if="eventTagNames?.length">
-          <span class="badge" v-for="(tagName, index) in eventTagNames" :key="index">
-            {{ tagName }}<span v-if="index < eventTagNames.length - 1"></span>
-          </span>
-            </p>
-            <p v-else></p>
+
 
             <!-- Carousel container -->
             <div class="carousel-container">
@@ -34,27 +30,34 @@
           </li>
         </ul>
 
-        <div class="card-body">
-          <!-- Event details -->
-          <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
-          <h6 class="card-text">
-            <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
-            <p>{{ fullAddress }}</p>
-          </h6>
-          <p class="card-text">{{ event.description || 'No description available' }}</p>
-          <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-          <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
-          <p class="card-text"><strong>Creator: </strong>
-            <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
-          </p>
+      <div class="card-body">
+        <!-- Event tags -->
+        <p class="event-tags">
+            <span class="badge" v-for="(tagName, index) in eventTagNames.slice(0, 3)" :key="index">
+              {{ tagName }}<span v-if="index < eventTagNames.length - 1"></span>
+            </span>
+        </p>
+        <!-- Event details -->
+        <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
+        <h6 class="card-text">
+          <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
+          <p>{{ fullAddress }}</p>
+        </h6>
+        <p class="card-text">{{ truncateEventDescription || 'No description available' }}</p>
+        <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
+        <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
+        <p class="card-text"><strong>Creator: </strong>
+          <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
+        </p>
 
-          <!-- Joined users list -->
-          <p class="card-text"><strong>Joined Users:</strong></p>
-          <ul class="text-center">
-            <li class="user-list-item" v-for="(username, index) in event.joinedUserNames || []" :key="username">
-              <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
-            </li>
-          </ul>
+        <!-- Joined users list -->
+        <p class="card-text"><strong>Joined Users:</strong></p>
+        <ul class="joined-users-list">
+          <li v-for="(username, index) in truncatedJoinedUsers" :key="index" class="user-list-item">
+            <a v-if="username !== '...'" :href="`/userprofile/${props.event.joinedUserIds[index]}`">{{ username }}</a>
+            <span v-else>{{ username }}</span>
+          </li>
+        </ul>
 
           <!-- Join event button -->
           <div class="text-center">
@@ -76,7 +79,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import {fetchUserIdAndRole} from '@/service/authService.js';
 import {useRouter} from "vue-router";
 import axios from "axios";
@@ -216,6 +219,21 @@ const truncateDescription = (description) => {
   return words.slice(0, 6).join(' '); // Get the first 4 words and join them back into a string
 };
 
+// Computed property to truncate the joined users list
+const truncatedJoinedUsers = computed(() => {
+  const joinedUserNames = props.event.joinedUserNames || [];
+  if (joinedUserNames.length > 3) {
+    return joinedUserNames.slice(0, 3).concat('...');
+  }
+  return joinedUserNames;
+});
+
+// Computed property to truncate the description
+const truncateEventDescription = computed(() => {
+  const description = props.event.description || 'No description available';
+  return description.length > 60 ? description.slice(0, 60) + '...' : description;
+});
+
 const nextSlide = () => {
   currentSlide.value = (currentSlide.value + 1) % eventImageUrls.value.length;
 };
@@ -289,12 +307,6 @@ const fetchEventTags = async () => {
   }
 };
 
-
-// Function to check if the current user is the creator of the event
-const isCreator = (event) => {
-  return userId.value && String(userId.value) === String(event.creatorUserId);
-};
-
 // Function to create heart animations
 const emitHeart = () => {
   const heartEl = document.createElement('div');
@@ -312,8 +324,6 @@ const emitHeart = () => {
     }
   }, 1000);
 };
-
-
 
 // Fetch user data, creator username, joined users, and event media files on component mount
 onMounted(async () => {
@@ -344,17 +354,6 @@ onMounted(async () => {
   width: 100%;
 }
 
-.card {
-  width: 100%;
-  max-width: 300px; /* Default for larger screens */
-  padding: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: max-width 0.3s ease-in-out;
-}
-
 .card-body {
   font-size: 1rem;
 }
@@ -373,23 +372,25 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 400px; /* You can adjust this based on your desired max card size */
-  height: 100%;
-  max-height: 700px; /* Adjust as needed */
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
+  max-width: 300px; /* Default for larger screens */
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: max-width 0.3s ease-in-out;
+  height: 100%; /* Ensure the card takes full height */
 }
 
+.list-group {
+  flex: 1 1 50%; /* Take 50% of the height */
+  overflow-y: auto; /* Allow scrolling if content overflows */
+}
 
 .card-body {
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  flex-grow: 1;
-  overflow: hidden;
+  flex: 1 1 50%; /* Take 50% of the height */
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  font-size: 1rem;
 }
 
 .card-title {
@@ -409,14 +410,6 @@ onMounted(async () => {
   display: -webkit-box;
   -webkit-line-clamp: 5; /* Limit to 5 lines by default */
   -webkit-box-orient: vertical;
-}
-
-.card-text.long-text {
-  font-size: 0.7rem; /* Resizes for longer content */
-}
-
-.card-text.short-text {
-  font-size: 0.9rem; /* Normal size */
 }
 
 /* Ensure no font size exceeds 11px on smaller cards */
@@ -458,8 +451,8 @@ onMounted(async () => {
 
 .event-images {
   width: 100%; /* Ensure images take up the full width of their container */
-  height: auto; /* Maintain aspect ratio */
-  object-fit: cover;
+  height: 100%; /* Maintain aspect ratio */
+  object-fit: cover; /* Cover the entire container */
   max-height: 200px;
 }
 
@@ -485,8 +478,13 @@ onMounted(async () => {
   right: 10px;
 }
 
-
-
+.joined-users-list {
+  display: flex;
+  flex-wrap: nowrap;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
 
 .user-list-item {
   list-style: none;
@@ -580,10 +578,13 @@ onMounted(async () => {
 .badge {
   font-size: 1.25rem;
   font-weight: bolder;
-  margin-right: 2rem;
+  margin-right: 1rem;
   background: white;
   color: #B00101;
   border: 2px solid #B00101;
   border-radius: 15px;
+}
+
+.event-tags {
 }
 </style>

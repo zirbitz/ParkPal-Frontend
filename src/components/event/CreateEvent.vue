@@ -294,8 +294,6 @@ const uploadMediaFiles = async () => {
   }
 };
 
-
-
 const toggleTagSelection = (tagId) => {
   if (selectedTags.value.has(tagId)) {
     selectedTags.value.delete(tagId);
@@ -574,23 +572,9 @@ const submitForm = async (event) => {
 </template>
 
 <style scoped>
-.highlighted {
-  background-color: #d3d3d3; /* Light gray background for highlighted items */
-  cursor: pointer;
-}
-
-.custom-option {
-  padding: 5px;
-  border: 1px solid #ccc;
-  margin: 2px 0;
-}
 
 .custom-select {
   position: relative;
-}
-
-.custom-options {
-  margin-top: 5px;
 }
 
 .table td {
@@ -620,25 +604,6 @@ const submitForm = async (event) => {
   object-fit: cover;
 }
 
-.popup {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: #28a745;
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  font-size: 16px;
-}
-
-.popup-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .table-borderless td, .table-borderless th {
   border: none;
 }
@@ -652,9 +617,11 @@ const submitForm = async (event) => {
   background: rgba(0, 0, 0, 0.5);
   z-index: 1050;
 }
+
 .modal-body{
   border: red;
 }
+
 .modal {
   z-index: 5000;
 }

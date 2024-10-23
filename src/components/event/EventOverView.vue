@@ -5,9 +5,8 @@ import axios from 'axios';
 import {API_ROUTES} from "@/apiRoutes.js";
 
 const events = ref([]); // All events from API
-const currentPage = ref(1); // Track the current page
 const eventPage = ref(1);
-const eventsPerPage = 4;
+const eventsPerPage = 6;
 
 const totalEventPages = computed(() => Math.ceil(events.value.length / eventsPerPage));
 
@@ -25,20 +24,6 @@ const paginatedEvents = computed(() => {
   return events.value.slice(start, start + eventsPerPage);
 });
 
-// Navigate to the next page
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
-};
-
-// Navigate to the previous page
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
-};
-
 const prevEventPage = () => {
   if (eventPage.value > 1) eventPage.value--;
 };
@@ -53,15 +38,6 @@ onMounted(() => {
   fetchAllEvents();
 });
 
-// Function to handle the updateEvent event
-const handleUpdateEvent = (updatedEvent) => {
-  const index = events.value.findIndex(event => event.id === updatedEvent.id);
-  if (index !== -1) {
-    events.value[index] = { ...events.value[index], ...updatedEvent };
-  } else {
-    console.error('Event not found:', updatedEvent);
-  }
-};
 </script>
 
 <template>
@@ -107,17 +83,6 @@ const handleUpdateEvent = (updatedEvent) => {
 .row {
   display: flex;
   flex-wrap: wrap;
-}
-
-.col-md-6 {
-  display: flex;
-  align-items: stretch;
-}
-
-.pagination-controls {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
 }
 
 .pagination-controls button {

@@ -18,6 +18,9 @@ console.log('Event ID:', props.eventId);
 
 const mediaFiles = ref([]);
 const selectedTags = ref(new Set());
+const customTagInput = ref("");  // New ref for custom tag input
+const availableTags = ref([]);   // To store tags fetched from the API
+const customTags = ref(new Map());
 const updateMediaFileIds = ref([]); // Store new media IDs after upload
 const existingMediaExternalIds = ref([]); // Store old media external IDs
 const parks = ref([]);
@@ -35,7 +38,7 @@ const formData = ref({
   updateMediaFileIds: [],
   joinedUserIds: [],
   joinedUserNames: [],
-
+  eventTagsIds: [],
 });
 
 const showErrorPopup = ref(false);
@@ -45,6 +48,7 @@ const startDateValidationMessage = ref('');
 const endDateValidationMessage = ref('');
 const startTimeValidationMessage = ref('');
 const endTimeValidationMessage = ref('');
+const tagValidationMessage = ref('');
 
 // Validation for Title
 const isTitleValid = computed(() => {
@@ -74,10 +78,7 @@ const isDescriptionValid = computed(() => {
 
 // Validate Park Selection
 const isParkSelected = computed(() => {
-  if (!selectedParkId.value) {
-    return false; // or set a message if necessary
-  }
-  return true;
+  return selectedParkId.value;
 });
 
 const now = new Date();
@@ -199,6 +200,42 @@ const fetchEventData = async () => {
   }
 };
 
+// Add custom tag
+const addCustomTag = async () => {
+  const tag = customTagInput.value.trim();
+
+  if (tag === '') {
+    tagValidationMessage.value = 'Tag must be between 3 and 50 characters long.';
+    return;
+  }
+
+  if (!isTagValid.value) {
+    return;
+  }
+  try {
+    const response = await axios.post('http://localhost:8080/event-tags', {name: tag}, {withCredentials: true});
+    const newTagId = response.data.id;
+
+    selectedTags.value.add(newTagId);
+    customTags.value.set(newTagId, tag);  // Store custom tag with its ID
+
+    customTagInput.value = '';
+  } catch (error) {
+    console.error('Error adding custom tag:', error);
+    tagValidationMessage.value = 'Error adding custom tag. Please try again.';
+  }
+};
+
+// Fetch available event tags from the API
+const fetchEventTags = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/event-tags');
+    availableTags.value = response.data;
+  } catch (error) {
+    console.error('Error fetching event tags:', error);
+  }
+};
+
 const deleteExistingMediaFile = async (fileId, index) => {
   if (!fileId) {
     console.error('File ID is not defined');
@@ -236,8 +273,9 @@ const deleteEvent = async () => {
 
 onMounted(async () => {
   try {
-    const response = await axios.get(API_ROUTES.PARKS, { withCredentials: true });
+    const response = await axios.get(API_ROUTES.PARKS);
     parks.value = response.data;
+    await fetchEventTags();
   } catch (error) {
     console.error('Error fetching parks:', error);
   }
@@ -261,29 +299,6 @@ const removeMediaFile = (index) => {
     mediaFiles.value.splice(index, 1);
   } catch (error) {
     console.error(`Error removing media file at index ${index}:`, error);
-  }
-};
-
-const removeAllMediaFiles = () => {
-  try {
-    mediaFiles.value.forEach(file => {
-      if (file.previewUrl) {
-        URL.revokeObjectURL(file.previewUrl);
-      }
-    });
-    mediaFiles.value = [];
-  } catch (error) {
-    console.error('Error removing all media files:', error);
-  }
-};
-
-const createObjectURL = (file) => {
-  try {
-    const url = URL.createObjectURL(file);
-    file.previewUrl = url;
-    return url;
-  } catch (error) {
-    console.error('Error creating object URL for file:', error);
   }
 };
 
@@ -335,6 +350,54 @@ const toggleTagSelection = (event) => {
 };
 
 const isTagSelected = (tag) => selectedTags.value.has(tag);
+
+const isTagValid = computed(() => {
+  const tag = customTagInput.value.trim();
+
+  // Skip validation if the input is empty (but do not allow empty tag addition)
+  if (tag === '') {
+    tagValidationMessage.value = '';
+    return true;
+  }
+
+  // Check if the tag length is between 3 and 50 characters
+  if (tag.length < 3 || tag.length > 50) {
+    tagValidationMessage.value = 'Tag must be between 3 and 50 characters long.';
+    return false;
+  }
+
+  // Check if the custom tag already exists in the available tags or selected tags
+  const tagExistsInAvailableTags = availableTags.value.some(t => t.name.toLowerCase() === tag.toLowerCase());
+  const tagExistsInSelectedTags = Array.from(selectedTags.value).some(selectedTag => {
+    const foundTag = availableTags.value.find(t => t.id === selectedTag);
+    return foundTag && foundTag.name.toLowerCase() === tag.toLowerCase();
+  });
+
+  if (tagExistsInAvailableTags || tagExistsInSelectedTags) {
+    tagValidationMessage.value = 'This tag already exists or has already been selected.';
+    return false;
+  }
+
+  tagValidationMessage.value = '';
+  return true;
+});
+
+const getTagName = (tagId) => {
+  // Look for the tag in availableTags
+  const foundTag = availableTags.value.find(t => t.id === tagId);
+  if (foundTag) {
+    return foundTag.name;
+  }
+
+  // Look for the tag in customTags
+  const customTagName = customTags.value.get(tagId);
+  if (customTagName) {
+    return customTagName;
+  }
+
+  // Return fallback if the tag is not found
+  return 'Unknown tag';
+};
 
 const submitForm = async (event) => {
   event.preventDefault();
@@ -492,6 +555,49 @@ const submitForm = async (event) => {
         </div>
       </div>
 
+      <div class="mb-3">
+        <label for="eventTags" class="form-label">Select Event Tags</label>
+        <div class="custom-select">
+          <select class="form-select" id="eventTags" @change="toggleTagSelection($event.target.value)" multiple>
+            <option v-for="tag in availableTags" :key="tag.id" :value="tag.id" :selected="isTagSelected(tag.id)">
+              {{ tag.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Custom Tag Input -->
+        <div class="mt-2">
+          <!-- Tag Input Field -->
+          <input
+              type="text"
+              v-model="customTagInput"
+              placeholder="Add custom tag"
+              class="form-control mb-2"
+              :class="{ 'is-invalid': !isTagValid}"
+          />
+
+          <!-- Validation Error Message -->
+          <p v-if="!isTagValid> 0" class="text-danger">{{ tagValidationMessage }}</p>
+
+          <!-- Add Tag Button -->
+          <button
+              type="button"
+              class="btn btn-secondary"
+              @click="addCustomTag"
+          >
+            Add Tag
+          </button>
+        </div>
+
+        <!-- Display selected tags -->
+        <div class="selected-tags mt-2">
+          <span v-for="tag in Array.from(selectedTags)" :key="tag" class="badge bg-primary me-2">
+            {{ getTagName(tag) }}
+            <button type="button" class="btn-close btn-close-white" @click="toggleTagSelection(tag)"></button>
+          </span>
+        </div>
+      </div>
+
       <div class="row text-center mb-3">
         <div class="col-md-6">
           <button type="submit" class="btn btn-primary">Update Event</button>
@@ -514,19 +620,6 @@ const submitForm = async (event) => {
 
 .media-preview {
   margin-top: 10px;
-}
-
-.media-item {
-  margin-bottom: 10px;
-}
-
-.img-preview {
-  max-width: 100px;
-  max-height: 100px;
-}
-
-.video-preview {
-  max-width: 200px;
 }
 
 .custom-width-input {
