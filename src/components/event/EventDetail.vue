@@ -5,6 +5,8 @@ import axios from "axios";
 import { API_ROUTES } from "@/apiRoutes.js";
 import placeholderImage from '/src/assets/images/people.png';
 import {fetchUserIdAndRole} from "@/service/authService.js";
+import * as L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 // Reactive properties to store the event data, user ID, creator's username, and image URLs
 const event = ref(null);
@@ -16,13 +18,15 @@ const creatorImageUrl = ref(null);
 const currentSlide = ref(0);
 const eventTagNames = ref([]);
 const parkName = ref('');
+const map = ref(null);
+const parkMarker = ref(null);
 const fullAddress = ref('');
 const isUserJoined = ref(false);
 const isJoining = ref(false);
 const isUnjoining = ref(false);
 const heartContainer = ref(null);
 
-
+//TODO: add better styling for carousel!
 // Function to fetch the event by ID
 const fetchEvent = async () => {
   try {
@@ -30,12 +34,64 @@ const fetchEvent = async () => {
     const response = await axios.get(`http://localhost:8080/events/${eventId.value}`);
     event.value = response.data;
     await fetchCreatorUsername(event.value.creatorUserId);
-    await fetchJoinedUsers();
     await fetchEventImages(event.value.mediaFileExternalIds);
     await fetchParkInfo();
     await fetchEventTags();
   } catch (error) {
     console.error('Error fetching event:', error);
+  }
+};
+const initMap = () => {
+  map.value = L.map('map').setView([48.2082, 16.3738], 13); // Default view centered on Vienna
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+  }).addTo(map.value);
+};
+
+const geocodeAddress = async (park) => {
+  const addressString = `${park.address.streetNumber}, ${park.address.zipCode} ${park.address.city}, ${park.address.country.name}`;
+  console.log(addressString); // Correctly log the address
+
+  try {
+    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        q: addressString,
+        format: 'json',
+        addressdetails: 1,
+        limit: 1,
+      },
+    });
+
+    console.log('Geocode response:', response.data); // Correctly log the response
+
+    if (response.data && response.data.length > 0) {
+      const location = response.data[0];
+      park.lat = parseFloat(location.lat);
+      park.lng = parseFloat(location.lon); // Correct key for longitude
+      console.log(`Coordinates found: lat = ${park.lat}, lng = ${park.lng}`);
+    } else {
+      console.warn(`No coordinates found for park: ${park.name}`);
+    }
+  } catch (error) {
+    console.error(`Error geocoding address for park: ${park.name}`, error);
+  }
+};
+
+
+
+// Function to update the map location based on geocoded lat/lng
+const updateMapLocation = () => {
+  if (event.value && event.value.lat && event.value.lng) {
+    const latLng = [event.value.lat, event.value.lng];
+
+    if (parkMarker.value) {
+      parkMarker.value.setLatLng(latLng); // Update the marker's position
+    } else {
+      parkMarker.value = L.marker(latLng).addTo(map.value); // Add a new marker if it doesn't exist
+    }
+
+    map.value.setView(latLng, 15); // Center the map at the new coordinates
   }
 };
 
@@ -82,14 +138,28 @@ const toggleJoin = async () => {
     console.error('Error updating event:', error);
   }
 };
+
 const formatDate = (date) => {
   const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
   return new Date(date).toLocaleDateString(undefined, options);
 };
+const truncateDescription = (description) => {
+  if (!description) return ''; // Handle cases where description is empty or undefined
+  const words = description.split(' '); // Split the description into words
+  return words.slice(0, 6).join(' '); // Get the first 4 words and join them back into a string
+};
+
+const nextSlide = () => {
+  currentSlide.value = (currentSlide.value + 1) % eventImageUrls.value.length;
+};
+
+const prevSlide = () => {
+  currentSlide.value = (currentSlide.value - 1 + eventImageUrls.value.length) % eventImageUrls.value.length;
+};
 // Function to fetch joined users
 const fetchJoinedUsers = async () => {
   try {
-    const response = await axios.get(`${API_ROUTES.EVENTS}/${event.value.id}`);
+    const response = await axios.get(`http://localhost:8080/event/${event.value.id}`);
     const joinedUserNames = response.data.joinedUserNames || [];
     const joinedUserIds = response.data.joinedUserIds || [];
     event.value.joinedUserNames = joinedUserNames;
@@ -110,10 +180,22 @@ const fetchParkInfo = async () => {
     const parkAddress = parkData.address;
 
     fullAddress.value = `${parkAddress.streetNumber}, ${parkAddress.zipCode} ${parkAddress.city}, ${parkAddress.country.name}`;
+
+    await geocodeAddress(parkData); // Fetch the coordinates from the address
+
+    // After geocoding, update event's lat/lng from parkData
+    event.value.lat = parkData.lat;
+    event.value.lng = parkData.lng;
+
+    if (event.value.lat && event.value.lng) {
+      updateMapLocation();
+    }
   } catch (error) {
     console.error('Error fetching park information', error);
   }
 };
+
+
 
 // Fetch event tags based on tag IDs
 const fetchEventTags = async () => {
@@ -195,8 +277,12 @@ onMounted(async () => {
   if (userData && userData.id) {
     userId.value = userData.id;
   }
-  await fetchEvent();
+  await fetchEvent(); // Fetch event data first
+  initMap(); // Initialize the map
+  await fetchParkInfo(); // Fetch park info, which includes geocoding the address
+  updateMapLocation(); // Now set map to park location after geocoding
 });
+
 </script>
 
 <template>
@@ -223,10 +309,10 @@ onMounted(async () => {
     <section class="event-info">
       <div class="event-header">
         <h1 class="event-title">{{ event.title || 'No title available' }}</h1>
-        <p class="park-name">
+        <h3 class="park-name">
           Hosted at:
           <router-link :to="{ name: 'ParksOverview' }">{{ parkName }}</router-link>
-        </p>
+        </h3>
         <p>{{ fullAddress }}</p>
       </div>
 
@@ -249,6 +335,11 @@ onMounted(async () => {
         </p>
       </div>
     </section>
+
+    <section class="event-map">
+      <div id="map" style="height: 300px; width: 100%;"></div>
+    </section>
+
 
     <!-- Joined Users Section -->
     <section class="joined-users">
@@ -386,5 +477,10 @@ onMounted(async () => {
 
 .btn-join.joined {
   background-color: #dc3545;
+}
+
+.event-map {
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 </style>
