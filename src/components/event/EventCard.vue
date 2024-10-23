@@ -1,72 +1,78 @@
 <template>
-  <div class="card-container">
-    <div class="card" :style="{ color: textColor, maxWidth: cardWidth }">
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item">
-          <p v-if="eventTagNames?.length">
+  <router-link
+      :to="{ name: 'EventDetail', params: { eventId: event.id } }"
+      class=""
+  >
+    <div class="card-container">
+      <div class="card" :style="{ color: textColor, maxWidth: cardWidth }">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <p v-if="eventTagNames?.length">
           <span class="badge" v-for="(tagName, index) in eventTagNames" :key="index">
             {{ tagName }}<span v-if="index < eventTagNames.length - 1"></span>
           </span>
-          </p>
-          <p v-else></p>
+            </p>
+            <p v-else></p>
 
-          <!-- Carousel container -->
-          <div class="carousel-container">
-            <!-- Image carousel -->
-            <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
-              <div v-for="(url, index) in eventImageUrls" :key="index" class="slide">
-                <img
-                    class="event-images"
-                    :src="url"
-                    :alt="url === placeholderImage ? 'Placeholder Image' : truncateDescription(event.description)"
-                />
+            <!-- Carousel container -->
+            <div class="carousel-container">
+              <!-- Image carousel -->
+              <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+                <div v-for="(url, index) in eventImageUrls" :key="index" class="slide">
+                  <img
+                      class="event-images"
+                      :src="url"
+                      :alt="url === placeholderImage ? 'Placeholder Image' : truncateDescription(event.description)"
+                  />
+                </div>
               </div>
+
+              <!-- Carousel controls -->
+              <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide">❮</button>
+              <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide">❯</button>
             </div>
-
-            <!-- Carousel controls -->
-            <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide">❮</button>
-            <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide">❯</button>
-          </div>
-        </li>
-      </ul>
-
-      <div class="card-body">
-        <!-- Event details -->
-        <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
-        <h6 class="card-text">
-          <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
-          <p>{{ fullAddress }}</p>
-        </h6>
-        <p class="card-text">{{ event.description || 'No description available' }}</p>
-        <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-        <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
-        <p class="card-text"><strong>Creator: </strong>
-          <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
-        </p>
-
-        <!-- Joined users list -->
-        <p class="card-text"><strong>Joined Users:</strong></p>
-        <ul class="text-center">
-          <li class="user-list-item" v-for="(username, index) in event.joinedUserNames || []" :key="username">
-            <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
           </li>
         </ul>
 
-        <!-- Join event button -->
-        <div class="text-center">
-          <div class="heart-container" ref="heartContainer"></div>
-          <a
-              href="#"
-              class="btn btn-join"
-              @click.prevent="toggleJoin"
-              :class="{ 'join-animation': isJoining, 'unjoin-animation': isUnjoining, 'joined': isUserJoined }"
-          >
-            {{ isUserJoined ? 'Joined' : 'Join Event' }}
-          </a>
+        <div class="card-body">
+          <!-- Event details -->
+          <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
+          <h6 class="card-text">
+            <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
+            <p>{{ fullAddress }}</p>
+          </h6>
+          <p class="card-text">{{ event.description || 'No description available' }}</p>
+          <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
+          <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
+          <p class="card-text"><strong>Creator: </strong>
+            <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
+          </p>
+
+          <!-- Joined users list -->
+          <p class="card-text"><strong>Joined Users:</strong></p>
+          <ul class="text-center">
+            <li class="user-list-item" v-for="(username, index) in event.joinedUserNames || []" :key="username">
+              <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
+            </li>
+          </ul>
+
+          <!-- Join event button -->
+          <div class="text-center">
+            <div class="heart-container" ref="heartContainer"></div>
+            <a
+                href="#"
+                class="btn btn-join"
+                @click.prevent="toggleJoin"
+                :class="{ 'join-animation': isJoining, 'unjoin-animation': isUnjoining, 'joined': isUserJoined }"
+            >
+              {{ isUserJoined ? 'Joined' : 'Join Event' }}
+            </a>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </router-link>
+
 </template>
 
 <script setup>

@@ -24,7 +24,15 @@
           <input v-model="filters.startTS" type="date" class="form-control" id="startTS">
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-4">
+          <label for="eventTag" class="form-label">Event Tag</label>
+          <select v-model="filters.selectedTagId" class="form-control" id="eventTag">
+            <option value disabled ="">Select a tag</option>
+            <option v-for="tag in eventTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-6 ms-auto mt-5">
           <button type="submit" class="btn btn-primary">Search</button>
           <button type="button" class="btn btn-secondary ms-5" @click="resetFilters">Refresh</button>
         </div>
@@ -61,7 +69,7 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue';
+import {ref, computed, onMounted} from 'vue';
 import EventCard from "@/components/event/EventCard.vue";
 import axios from 'axios';
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -71,11 +79,13 @@ const filters = ref({
   title: '',
   parkName: '',
   creatorName: '',
-  startTS: '',  // Use this to hold the date input (yyyy-MM-dd)
+  startTS: '',
+  selectedTagId: '',
 });
 
 const filteredEvents = ref([]);
 const allEvents = ref([]);
+const eventTags = ref([]);
 const error = ref(null);
 
 // Pagination state
@@ -110,6 +120,17 @@ const fetchFilteredEvents = async () => {
   }
 };
 
+const fetchEventTags = async () => {
+  try {
+    const response = await axios.get("http://localhost:8080/event-tags");
+    if (Array.isArray(response.data)) {
+      eventTags.value = response.data;
+    }
+  } catch (error) {
+    console.error('Error fetching event tags:', error);
+  }
+};
+
 // Function to filter events based on form inputs
 const filterEvents = async () => {
   let parkId = null;
@@ -132,13 +153,14 @@ const filterEvents = async () => {
     const matchesTitle = filters.value.title ? event.title.toLowerCase().includes(filters.value.title.toLowerCase()) : true;
     const matchesPark = parkId ? event.parkId === parkId : true;
     const matchesCreator = filters.value.creatorName ? event.creatorName.toLowerCase().includes(filters.value.creatorName.toLowerCase()) : true;
+    const matchesTag = filters.value.selectedTagId ? event.eventTagsIds.includes(filters.value.selectedTagId) : true;
 
     // Compare event startTS within the range for the entire day
     const matchesStartTS = filters.value.startTS
         ? (event.startTS >= startOfDay && event.startTS <= endOfDay)
         : true;
 
-    return matchesTitle && matchesPark && matchesCreator && matchesStartTS;
+    return matchesTitle && matchesPark && matchesCreator && matchesTag && matchesStartTS;
   });
 
   // Check if no events were found and display error message
@@ -177,6 +199,7 @@ const resetFilters = () => {
     parkName: '',
     creatorName: '',
     startTS: '',
+    selectedTagId: '',
   };
   error.value = null; // Clear any error message
   filteredEvents.value = allEvents.value; // Reset filtered events to show all events
@@ -191,7 +214,10 @@ const goToPage = (page) => {
 };
 
 // Fetch all events when the component is mounted
-fetchFilteredEvents();
+onMounted(() => {
+  fetchFilteredEvents();
+  fetchEventTags();
+});
 </script>
 
 <style scoped>

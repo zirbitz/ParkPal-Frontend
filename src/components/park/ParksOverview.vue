@@ -109,16 +109,17 @@ const filteredParks = computed(() => {
       No parks found matching your search criteria.
     </div>
 
-    <div v-else class="row row-cols-1 row-cols-md-2 g-4">
-      <div class="col" v-for="park in filteredParks" :key="park.id">
+    <div v-else class="row g-3">
+      <div class="col-12 col-md-6 col-lg-4" v-for="park in filteredParks" :key="park.id">
         <ParkCard id="park-card"
                   :title="park.name"
                   :address="park.address"
                   :events="park.events || []"
-        @click="showParkSection(park)">
+                  @click="showParkSection(park)">
         </ParkCard>
       </div>
     </div>
+
 
     <div v-if="selectedPark" class="modal fade show" tabindex="-1" style="display: block;">
       <div class="modal-dialog modal-lg">

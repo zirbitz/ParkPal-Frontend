@@ -90,6 +90,7 @@ import { onMounted, ref, watch } from 'vue';
 import axios from 'axios';
 import { API_ROUTES } from '@/apiRoutes.js';
 import { useStore } from "vuex";
+import router from "@/router.js";
 
 // Track auth status and profile picture URL
 const store = useStore();
@@ -162,7 +163,7 @@ async function handleLogout() {
   try {
     await store.dispatch('logout'); // Perform logout action
     await fetchAuthStatus(); // Update auth status after logout
-    this.$router.push({ name: 'Login' }); // Redirect to Login
+    await router.push("/login")
   } catch (error) {
     console.error('Error during logout:', error);
   }
