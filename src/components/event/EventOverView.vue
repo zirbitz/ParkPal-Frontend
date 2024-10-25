@@ -68,7 +68,7 @@ const handleUpdateEvent = (updatedEvent) => {
   <div class="container md mb-3">
     <h1>All Events</h1>
     <hr>
-    <div class="row row-cols-2 g-3">
+    <div class="row row-cols-2 g-3 mb-5">
       <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col">
         <EventCard :event="event" />
       </div>
