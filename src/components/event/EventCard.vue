@@ -3,74 +3,71 @@
       :to="{ name: 'EventDetail', params: { eventId: event.id } }"
       class=""
   >
-    <div class="card-container">
-      <div class="card" :style="{ color: textColor, maxWidth: cardWidth }">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            <p v-if="eventTagNames?.length">
+
+    <div class="card h-100">
+      <div class="carousel-container">
+        <!-- Image carousel -->
+        <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+          <div v-for="(url, index) in eventImageUrls" :key="index" class="slide">
+            <img
+                class="event-images"
+                :src="url"
+                :alt="url === placeholderImage ? 'Placeholder Image' : truncateDescription(event.description)"
+            />
+          </div>
+        </div>
+
+        <!-- Carousel controls -->
+        <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide(); $event.preventDefault()">❮</button>
+        <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide(); $event.preventDefault()">❯</button>
+      </div>
+
+
+      <div class="card-body">
+        <div>
+          <p v-if="eventTagNames?.length">
           <span class="badge" v-for="(tagName, index) in eventTagNames" :key="index">
             {{ tagName }}<span v-if="index < eventTagNames.length - 1"></span>
           </span>
-            </p>
-            <p v-else></p>
+          </p>
+          <p v-else></p>
+        </div>
+        <!-- Event details -->
+        <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
+        <h6 class="card-text">
+          <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
+          <p>{{ fullAddress }}</p>
+        </h6>
+        <p class="card-text">{{ event.description || 'No description available' }}</p>
+        <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
+        <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
+        <p class="card-text"><strong>Creator: </strong>
+          <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
+        </p>
 
-            <!-- Carousel container -->
-            <div class="carousel-container">
-              <!-- Image carousel -->
-              <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
-                <div v-for="(url, index) in eventImageUrls" :key="index" class="slide">
-                  <img
-                      class="event-images"
-                      :src="url"
-                      :alt="url === placeholderImage ? 'Placeholder Image' : truncateDescription(event.description)"
-                  />
-                </div>
-              </div>
-
-              <!-- Carousel controls -->
-              <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide">❮</button>
-              <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide">❯</button>
-            </div>
+        <!-- Joined users list -->
+        <p class="card-text"><strong>Joined Users:</strong></p>
+        <ul class="text-center">
+          <li class="user-list-item" v-for="(username, index) in event.joinedUserNames || []" :key="username">
+            <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
           </li>
         </ul>
 
-        <div class="card-body">
-          <!-- Event details -->
-          <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
-          <h6 class="card-text">
-            <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
-            <p>{{ fullAddress }}</p>
-          </h6>
-          <p class="card-text">{{ event.description || 'No description available' }}</p>
-          <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-          <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
-          <p class="card-text"><strong>Creator: </strong>
-            <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
-          </p>
-
-          <!-- Joined users list -->
-          <p class="card-text"><strong>Joined Users:</strong></p>
-          <ul class="text-center">
-            <li class="user-list-item" v-for="(username, index) in event.joinedUserNames || []" :key="username">
-              <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
-            </li>
-          </ul>
-
-          <!-- Join event button -->
-          <div class="text-center">
-            <div class="heart-container" ref="heartContainer"></div>
-            <a
-                href="#"
-                class="btn btn-join"
-                @click.prevent="toggleJoin"
-                :class="{ 'join-animation': isJoining, 'unjoin-animation': isUnjoining, 'joined': isUserJoined }"
-            >
-              {{ isUserJoined ? 'Joined' : 'Join Event' }}
-            </a>
-          </div>
+        <!-- Join event button -->
+        <div class="text-center">
+          <div class="heart-container" ref="heartContainer"></div>
+          <a
+              href="#"
+              class="btn btn-join"
+              @click.prevent="toggleJoin"
+              :class="{ 'join-animation': isJoining, 'unjoin-animation': isUnjoining, 'joined': isUserJoined }"
+          >
+            {{ isUserJoined ? 'Joined' : 'Join Event' }}
+          </a>
         </div>
       </div>
     </div>
+
   </router-link>
 
 </template>
@@ -337,13 +334,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.card-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
 .card {
   width: 100%;
   max-width: 300px; /* Default for larger screens */
@@ -359,15 +349,6 @@ onMounted(async () => {
   font-size: 1rem;
 }
 
-/* Image carousel */
-.card-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: auto;
-  padding: 10px;
-}
 
 .card {
   display: flex;
@@ -438,8 +419,26 @@ onMounted(async () => {
 
 .carousel-container {
   position: relative;
-  width: 100%; /* Ensure the container takes full width */
-  overflow: hidden; /* Hide the overflow of slides */
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Carousel controls */
+.prev, .next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 2rem;
+  padding: 0 10px;
+  cursor: pointer;
+  z-index: 2; /* Ensure they are above the router link */
+}
+
+.clickable-content {
+  z-index: 1; /* Keeps router link below the controls */
 }
 
 /* Carousel slides */
@@ -463,19 +462,6 @@ onMounted(async () => {
   max-height: 200px;
 }
 
-/* Carousel controls */
-.prev, .next {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  font-size: 2rem;
-  padding: 0 10px;
-  cursor: pointer;
-  z-index: 10;
-}
 
 .prev {
   left: 10px;
@@ -484,7 +470,6 @@ onMounted(async () => {
 .next {
   right: 10px;
 }
-
 
 
 
