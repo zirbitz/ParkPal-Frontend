@@ -86,11 +86,12 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import axios from 'axios';
-import { API_ROUTES } from '@/apiRoutes.js';
-import { useStore } from "vuex";
+import {API_ROUTES} from '@/apiRoutes.js';
+import {useStore} from "vuex";
 import router from "@/router.js";
+import defaultProfilePicture from '@/assets/images/default-profile.png';
 
 // Track auth status and profile picture URL
 const store = useStore();
@@ -128,15 +129,14 @@ async function fetchAuthStatus() {
           const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${fullUserData.profilePictureId}`, {
             responseType: 'blob',
           });
-          const imageUrl = URL.createObjectURL(pictureResponse.data);
-          profilePictureUrl.value = imageUrl;
+          profilePictureUrl.value = URL.createObjectURL(pictureResponse.data);
         } else {
-          profilePictureUrl.value = '/src/assets/images/default-profile.png';
+          profilePictureUrl.value = defaultProfilePicture;
         }
       }
     } catch (error) {
       console.error('Error fetching user or profile picture:', error);
-      profilePictureUrl.value = require('@/assets/images/default-profile.png');
+      profilePictureUrl.value = defaultProfilePicture
     }
   }
 }
@@ -147,6 +147,10 @@ onMounted(() => {
 
   // Listen for profilePictureUpdated event
   window.addEventListener('profilePictureUpdated', (event) => {
+    if (!event.detail) {
+      profilePictureUrl.value = defaultProfilePicture;
+      return;
+    }
     profilePictureUrl.value = event.detail;
   });
 });

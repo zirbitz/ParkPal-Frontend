@@ -25,12 +25,14 @@ const salutation = ref('');
 const gender = ref('');
 const profilePictureId = ref('');
 const profilePictureUrl = ref(''); // To store profile picture URL or uploaded picture
+const originalProfilePictureUrl = ref(''); // To store the original profile picture URL
 const profilePictureError = ref('');
 const showFlashMessage = ref(false);
 const flashMessageText = ref('');
 const selectedProfilePictureFile = ref(null); // Store the selected file temporarily
 const fileInputRef = ref(null); // Ref for file input
 const showSuccessPopup = ref(false);
+const profileUpdated = ref(false);
 // Events Data
 const events = ref([]);
 const eventPage = ref(1);
@@ -85,6 +87,7 @@ const fetchUserProfileAndEvents = async () => {
           // Convert the blob to an object URL for display
           const imageUrl = URL.createObjectURL(profilePictureResponse.data);
           profilePictureUrl.value = imageUrl;
+          originalProfilePictureUrl.value = imageUrl;
 
         } catch (error) {
           profilePictureError.value = 'Error fetching profile picture';
@@ -103,23 +106,6 @@ const fetchUserProfileAndEvents = async () => {
   } catch (error) {
     console.error('Failed to fetch user or events data:', error);
   }
-};
-
-// Validate inputs before updating profile
-const validateAndUpdateProfile = () => {
-  // Validate inputs before updating profile
-  if (firstName.value.trim() === '' || lastName.value.trim() === '' ||
-      !isEmailValid.value || username.value.trim() === '' ||
-      !isCountryValid.value || !isSalutationValid.value ||
-      !isGenderValid.value) {
-    showFlashMessage.value = true;
-    flashMessageText.value = 'Please fill in all required fields correctly.';
-    setTimeout(() => {
-      showFlashMessage.value = false;
-    }, 3000);
-    return;
-  }
-  updateProfile();
 };
 
 // Pagination functions for events
@@ -158,7 +144,6 @@ const deleteUserProfile = async () => {
     }
   }
 };
-
 
 // Update event function
 const updateEvent = (index) => {
@@ -230,6 +215,7 @@ const updateProfile = async () => {
     profilePictureId.value = newProfilePictureId;
     showFlashMessage.value = true;
     showSuccessPopup.value = true;
+    profileUpdated.value = true;
 
 
     window.scrollTo(0, 0);
@@ -256,6 +242,7 @@ const handleFileUpload = (event) => {
   if (file) {
     selectedProfilePictureFile.value = file; // Store the file temporarily
     profilePictureUrl.value = URL.createObjectURL(file); // Display preview
+    profileUpdated.value = false;
   } else {
     profilePictureError.value = 'No file selected';
   }
@@ -276,13 +263,23 @@ const resetProfilePicture = async () => {
     // Clear the profile picture data on the frontend
     profilePictureId.value = '';
     profilePictureUrl.value = '';
+    originalProfilePictureUrl.value = '';
+    profileUpdated.value = true;
     profilePictureError.value = null;
+    selectedProfilePictureFile.value = null;
 
     console.log("Profile picture deleted successfully.");
   } catch (error) {
     console.error("Failed to delete profile picture:", error);
     profilePictureError.value = 'Error deleting profile picture.';
   }
+};
+
+// Reset profile picture to original if the user cancels the update
+const resetToOriginalProfilePicture = () => {
+  profilePictureUrl.value = originalProfilePictureUrl.value;
+  selectedProfilePictureFile.value = null;
+  profileUpdated.value = false;
 };
 
 // Fetch countries and user profile on component mount
@@ -297,11 +294,10 @@ watch(profilePictureUrl, (newUrl) => {
   window.dispatchEvent(event);
 });
 
-// Add beforeRouteLeave guard to reset profile picture
-onBeforeRouteLeave(async (to, from, next) => {
-  if (selectedProfilePictureFile.value) {
-    selectedProfilePictureFile.value = null;
-    await fetchUserProfileAndEvents();
+// Watch for route leave to reset profile picture if not updated
+onBeforeRouteLeave((to, from, next) => {
+  if (!profileUpdated.value) {
+    resetToOriginalProfilePicture();
   }
   next();
 });
