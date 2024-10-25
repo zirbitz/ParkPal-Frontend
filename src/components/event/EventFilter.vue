@@ -46,7 +46,9 @@
       <!-- Display EventCard if events are found -->
       <div class="col-sm-12" v-if="paginatedEvents.length > 0">
         <div v-for="event in paginatedEvents" :key="event.id">
-          <EventCard :event="event" />
+          <div class="mb-3">
+            <EventCard :event="event" />
+          </div>
         </div>
       </div>
     </div>
