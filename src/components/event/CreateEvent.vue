@@ -14,6 +14,7 @@ const parks = ref([]); // Store the list of parks
 const selectedParkId = ref('');
 const showSuccessPopup = ref(false);
 const customTags = ref(new Map());
+const createdEventId = ref(null);
 
 // Validation Computed Properties
 const isParkSelected = computed(() => !!selectedParkId.value);
@@ -418,6 +419,8 @@ const submitForm = async (event) => {
     // Send the event creation request
     const response = await axios.post(url, formData, {withCredentials: true});
 
+    createdEventId.value = response.data.id;
+
     //console.log('Event created successfully:', response.data);
 
     // Show the success popup and hide it after 3 seconds
@@ -441,8 +444,11 @@ const submitForm = async (event) => {
     <div v-if="showErrorPopup" class="alert alert-danger mt-3" role="alert">
       Please fill in all required fields before submitting.
     </div>
-    <div v-if="showSuccessPopup" class="alert alert-success mt-3" role="alert">
-      Event successfully created
+    <div v-if="showSuccessPopup" class="alert alert-success mt-3 d-flex justify-content-between align-items-center" role="alert">
+      <span>Event successfully created.</span>
+      <router-link :to="{ name: 'EventDetail', params: { eventId: createdEventId } }" class="btn btn-primary">
+        View Event
+      </router-link>
     </div>
     <form id="editEventForm" @submit.prevent="submitForm">
       <!-- Event Title -->

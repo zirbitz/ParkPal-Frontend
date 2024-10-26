@@ -103,37 +103,40 @@ const checkUserJoined = () => {
 // Function to toggle join/unjoin event participation
 const toggleJoin = async () => {
   try {
+    // Check if user is already joined
     const userCurrentlyJoined = checkUserJoined();
 
+    // Emit heart animation only if joining
     if (!userCurrentlyJoined) {
-      emitHeart(); // Emit hearts only when joining
+      emitHeart();
     }
 
+    // Trigger animations
     if (userCurrentlyJoined) {
       isUnjoining.value = true;
-      setTimeout(() => {
-        isUnjoining.value = false;
-      }, 600);
+      setTimeout(() => { isUnjoining.value = false; }, 600);
     } else {
       isJoining.value = true;
-      setTimeout(() => {
-        isJoining.value = false;
-      }, 600);
+      setTimeout(() => { isJoining.value = false; }, 600);
     }
 
+    // Determine join or unjoin action
     const isJoiningAction = !userCurrentlyJoined;
-    const updatedJoinedUserIds = isJoiningAction
+
+    // Make API call to join/unjoin event
+    const response = await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.value.id, isJoiningAction), null, { withCredentials: true });
+
+    // Update event data with the latest joined users
+    event.value.joinedUserIds = isJoiningAction
         ? [...event.value.joinedUserIds, userId.value]
         : event.value.joinedUserIds.filter(id => id !== userId.value);
 
-    const response = await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.value.id, isJoiningAction), null, { withCredentials: true });
+    // Update event names from response
+    event.value.joinedUserNames = Array.isArray(response.data) ? response.data : [];
 
-    const joinedUserNames = Array.isArray(response.data) ? response.data : [];
-
-    event.value.joinedUserIds = updatedJoinedUserIds;
-    event.value.joinedUserNames = joinedUserNames;
-
+    // Refresh join state to reflect the change
     isUserJoined.value = checkUserJoined();
+
   } catch (error) {
     console.error('Error updating event:', error);
   }
@@ -273,14 +276,25 @@ const emitHeart = () => {
 const route = useRoute();
 onMounted(async () => {
   eventId.value = route.params.eventId;
+
+  // Fetch user ID if available
   const userData = await fetchUserIdAndRole();
   if (userData && userData.id) {
     userId.value = userData.id;
   }
-  await fetchEvent(); // Fetch event data first
-  initMap(); // Initialize the map
-  await fetchParkInfo(); // Fetch park info, which includes geocoding the address
-  updateMapLocation(); // Now set map to park location after geocoding
+
+  // Fetch event data first
+  await fetchEvent();
+
+  // Set the initial join state once the event data is available
+  isUserJoined.value = checkUserJoined();
+
+  // Initialize the map
+  initMap();
+
+  // Fetch park info and update map location after geocoding
+  await fetchParkInfo();
+  updateMapLocation();
 });
 
 </script>
