@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import {ref, onMounted, computed, onUnmounted} from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 const router = useRouter();
@@ -11,16 +11,36 @@ const events = ref([]); // Store events here
 const currentPage = ref(1);
 const eventPage = ref(1); // Separate current page for events
 const itemsPerPage = 5; // Adjust number of items per page for users
-const eventsPerPage = 2; // Set number of events per page to 2
+const eventsPerPage = ref(3); // Set number of events per page to display
 const mediaFiles = ref([]);
 const filesPerPage = 5;
+
+// Watch for screen size changes and update eventsPerPage
+const updateEventsPerPage = () => {
+  if (window.innerWidth >= 768 && window.innerWidth < 992) {
+    eventsPerPage.value = 4; // Medium screens
+  } else {
+    eventsPerPage.value = 3; // Default
+  }
+};
+
+// Initial check
+updateEventsPerPage();
+
+// Add event listener for window resize
+window.addEventListener('resize', updateEventsPerPage);
+
+// Clean up event listener on component unmount
+onUnmounted(() => {
+  window.removeEventListener('resize', updateEventsPerPage);
+});
 
 // Search-related state
 const searchQuery = ref(""); // Store the search query
 
 // Calculate total pages for users and events
 const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage));
-const totalEventPages = computed(() => Math.ceil(events.value.length / eventsPerPage));
+const totalEventPages = computed(() => Math.ceil(events.value.length / eventsPerPage.value));
 
 // Paginated users and events
 const filteredUsers = computed(() => {
@@ -38,8 +58,8 @@ const paginatedUsers = computed(() => {
 });
 
 const paginatedEvents = computed(() => {
-  const start = (eventPage.value - 1) * eventsPerPage;
-  return events.value.slice(start, start + eventsPerPage);
+  const start = (eventPage.value - 1) * eventsPerPage.value;
+  return events.value.slice(start, start + eventsPerPage.value);
 });
 const paginatedFiles = computed(() => {
   const start = (currentPage.value - 1) * filesPerPage;
@@ -258,8 +278,8 @@ const clearSearch = () => {
 // Fetch users and events when component is mounted
 onMounted(async () => {
   await fetchUsers();
-  fetchEvents();
-  fetchMediaFiles();
+  await fetchEvents();
+  await fetchMediaFiles();
 });
 </script>
 
@@ -287,18 +307,20 @@ onMounted(async () => {
       <div class="card mb-3">
         <div class="card-body">
           <h3 class="card-title mb-3">All Created Events</h3>
-          <div class="row row-cols-1 row-cols-md-2 g-4 mt-2">
-            <div v-for="(event, index) in paginatedEvents" :key="event.id" class="event-card col">
-              <EventCard :event="event"/>
-              <div class="d-flex justify-content-between mt-3 mb-3">
-                <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
-                <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
+          <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col d-flex">
+              <div class="event-card-wrapper flex-grow-1 d-flex flex-column">
+                <EventCard :event="event" class="flex-grow-1" />
+                <div class="d-flex justify-content-between m-3">
+                  <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
+                  <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
+                </div>
               </div>
             </div>
           </div>
 
           <nav aria-label="Event page navigation">
-            <ul class="pagination justify-content-center">
+            <ul class="pagination justify-content-center m-1">
               <li class="page-item" :class="{ disabled: eventPage === 1 }">
                 <button class="page-link" @click="prevEventPage">Previous</button>
               </li>
@@ -367,7 +389,6 @@ onMounted(async () => {
               </nav>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -440,9 +461,15 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.event-card {
-  width: 33%;
-  margin: 0 auto;
+.event-card-wrapper {
+  padding: 10px; /* Add padding if needed */
+  border-radius: 5px; /* Optional: Add border radius */
+  display: flex;
+  flex-direction: column;
+}
+
+.event-card-wrapper .event-card {
+  flex-grow: 1;
 }
 
 @media (max-width: 768px) {

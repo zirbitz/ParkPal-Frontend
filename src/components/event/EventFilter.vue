@@ -45,8 +45,8 @@
     <div class="row mb-3">
       <!-- Display EventCard if events are found -->
       <div class="col-sm-12" v-if="paginatedEvents.length > 0">
-        <div v-for="event in paginatedEvents" :key="event.id">
-          <div class="mb-3">
+        <div class="row">
+          <div class="col-sm-6 col-md-6 col-lg-4 mb-3" v-for="event in paginatedEvents" :key="event.id">
             <EventCard :event="event" />
           </div>
         </div>
@@ -92,7 +92,7 @@ const error = ref(null);
 
 // Pagination state
 const currentPage = ref(1);
-const itemsPerPage = ref(5);  // Number of items per page
+const itemsPerPage = ref(6);  // Number of items per page
 
 // Computed property to get paginated events
 const paginatedEvents = computed(() => {

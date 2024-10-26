@@ -7,7 +7,7 @@ import {API_ROUTES} from "@/apiRoutes.js";
 const events = ref([]); // All events from API
 const currentPage = ref(1); // Track the current page
 const eventPage = ref(1);
-const eventsPerPage = 4;
+const eventsPerPage = 6;
 
 const totalEventPages = computed(() => Math.ceil(events.value.length / eventsPerPage));
 
@@ -68,9 +68,9 @@ const handleUpdateEvent = (updatedEvent) => {
   <div class="container md mb-3">
     <h1>All Events</h1>
     <hr>
-    <div class="row row-cols-2 g-3 mb-5">
+    <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 g-1 mb-5">
       <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col">
-        <EventCard :event="event" />
+        <EventCard :event="event" :key="event.id" />
       </div>
     </div>
 
@@ -91,33 +91,10 @@ const handleUpdateEvent = (updatedEvent) => {
 </template>
 
 <style scoped>
-.card {
-  width: 100%;
-  max-width: 350px;
-}
-
-.event-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 350px;
-  height: 100%; /* Ensure that all cards have the same height */
-}
 
 .row {
   display: flex;
   flex-wrap: wrap;
-}
-
-.col-md-6 {
-  display: flex;
-  align-items: stretch;
-}
-
-.pagination-controls {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
 }
 
 .pagination-controls button {
