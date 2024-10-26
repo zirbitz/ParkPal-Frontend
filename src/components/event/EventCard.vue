@@ -122,6 +122,13 @@ const checkUserJoined = () => {
 
 const toggleJoin = async () => {
   try {
+    // Check if the user is logged in
+    if (!userId.value) {
+      // Redirect to the login page if the user is not logged in
+      router.push({ name: 'Login' });
+      return; // Exit the function to prevent further execution
+    }
+
     const userCurrentlyJoined = checkUserJoined();
 
     if (!userCurrentlyJoined) {
