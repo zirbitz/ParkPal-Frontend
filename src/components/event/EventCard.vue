@@ -61,6 +61,7 @@
               class="btn btn-join"
               @click.prevent="toggleJoin"
               :class="{ 'join-animation': isJoining, 'unjoin-animation': isUnjoining, 'joined': isUserJoined }"
+              :style="{ backgroundColor: isUserJoined ? '#28a745' : '#B00101' }"
           >
             {{ isUserJoined ? 'Joined' : 'Join Event' }}
           </a>
@@ -113,6 +114,18 @@ const isUserJoined = ref(false); // Initial state
 const isJoining = ref(false);
 const isUnjoining = ref(false);
 const heartContainer = ref(null);
+
+const isMobile = ref(false);
+
+onMounted(() => {
+  const updateMobileStatus = () => {
+    isMobile.value = window.innerWidth <= 600;
+    document.body.classList.toggle('no-hover', isMobile.value);
+  };
+
+  window.addEventListener('resize', updateMobileStatus);
+  updateMobileStatus(); // Initial check
+});
 
 
 // Function to check if the user has joined the event
@@ -341,16 +354,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.card {
-  width: 100%;
-  max-width: 300px; /* Default for larger screens */
-  padding: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: max-width 0.3s ease-in-out;
-}
 
 .card-body {
   font-size: 1rem;
@@ -360,7 +363,7 @@ onMounted(async () => {
 .card {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: 300px;
   max-width: 400px; /* You can adjust this based on your desired max card size */
   height: 100%;
   max-height: 700px; /* Adjust as needed */
@@ -491,7 +494,6 @@ onMounted(async () => {
 }
 
 
-/* Initial button styles */
 .btn-join {
   transition: background-color 1s ease, transform 1s ease, color 1s ease;
   position: relative;
@@ -501,13 +503,12 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   color: white;
-  background:  #B00101;
   border-radius: 25px;
 }
 
-/* Icon styles */
+/* Icon styles for button */
 .btn-join::before {
-  content: '\002B'; /* Plus icon (default) */
+  content: '\002B'; /* Plus icon */
   font-family: 'Arial', sans-serif;
   font-weight: bold;
   margin-right: 0.5em;
@@ -521,18 +522,12 @@ onMounted(async () => {
   content: '\2713'; /* Checkmark icon */
 }
 
-/* Permanent color change when joined */
-.joined {
-  background-color: #28a745; /* Green color */
-  color: white;
-}
-
-/* Animation for "Join" button */
+/* Animation for Join */
 .join-animation {
   animation: joinEffect 1s ease forwards;
 }
 
-/* Animation for "Unjoin" button */
+/* Animation for Unjoin */
 .unjoin-animation {
   animation: unjoinEffect 1s ease forwards;
 }
@@ -548,7 +543,7 @@ onMounted(async () => {
     transform: scale(1.1);
   }
   100% {
-    background-color: #13912e;
+    background-color: #28a745; /* Make sure the animation ends on green */
     transform: scale(1);
   }
 }
@@ -564,18 +559,21 @@ onMounted(async () => {
     transform: scale(1.1);
   }
   100% {
-    background-color: #B00101;
+    background-color: #B00101; /* Make sure the animation ends on red */
     transform: scale(1);
   }
 }
 
-.badge {
-  font-size: 1.25rem;
-  font-weight: bolder;
-  margin-right: 2rem;
-  background: white;
-  color: #B00101;
-  border: 2px solid #B00101;
-  border-radius: 15px;
+/* Disable hover effects for touch devices */
+@media (hover: none) {
+  .btn-join:hover {
+    background-color: inherit; /* Keep the background color as it is */
+    color: white; /* Maintain white text */
+  }
+}
+
+.no-hover .btn-join:hover {
+  background-color: inherit;
+  color: white;
 }
 </style>
