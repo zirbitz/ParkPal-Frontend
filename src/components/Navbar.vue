@@ -76,7 +76,7 @@
                   width="40"
                   height="40"
               />
-              <span class="user-name-text">User Profile</span>
+              <span class="user-name-text">{{ user?.userName || 'User Profile' }}</span>
             </router-link>
           </li>
         </ul>

@@ -189,6 +189,20 @@ const isEndTimeValid = computed(() => {
 const title = ref('');
 const description = ref('');
 
+const resetForm = () => {
+  title.value = '';
+  description.value = '';
+  startDate.value = now.toISOString().split('T')[0];
+  startTime.value = new Date(now.getTime() + 60 * 60 * 1000).toISOString().split('T')[1].substring(0, 5);
+  endDate.value = endDateTime.toISOString().split('T')[0];
+  endTime.value = endDateTime.toISOString().split('T')[1].substring(0, 5);
+  selectedParkId.value = '';
+  selectedTags.value = new Set();
+  customTagInput.value = '';
+  mediaFiles.value = [];
+  createMediaFileIds.value = [];
+};
+
 // Fetch available event tags from the API
 const fetchEventTags = async () => {
   try {
@@ -374,6 +388,7 @@ const submitForm = async (event) => {
     setTimeout(() => {
       showErrorPopup.value = false;
     }, 3000);
+
     window.scrollTo(0, 0);
     return;
   }
@@ -428,6 +443,9 @@ const submitForm = async (event) => {
     setTimeout(() => {
       showSuccessPopup.value = false;
     }, 3000); // Hide popup after 3 seconds
+
+    resetForm();
+
     window.scrollTo(0, 0);
 
   } catch (error) {
