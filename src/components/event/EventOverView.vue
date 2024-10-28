@@ -65,17 +65,17 @@ const handleUpdateEvent = (updatedEvent) => {
 </script>
 
 <template>
-  <div class="container md mb-3">
-    <h1>All Events</h1>
+  <div class="container-fluid mb-3">
+    <h1 class="text-center mt-3">All Events</h1>
     <hr>
-    <div class="row row-cols-2 g-3 mb-5">
-      <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
+      <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col d-flex justify-content-center">
         <EventCard :event="event" />
       </div>
     </div>
 
     <nav aria-label="Event page navigation">
-      <ul class="pagination justify-content-center">
+      <ul class="pagination justify-content-center flex-wrap">
         <li class="page-item" :class="{ disabled: eventPage === 1 }">
           <button class="page-link" @click="prevEventPage">Previous</button>
         </li>
@@ -89,6 +89,7 @@ const handleUpdateEvent = (updatedEvent) => {
     </nav>
   </div>
 </template>
+
 
 <style scoped>
 .card {

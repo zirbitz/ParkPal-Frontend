@@ -88,7 +88,7 @@ const filteredParks = computed(() => {
 </script>
 
 <template>
-  <div class="container">
+  <div class="container mt-3">
     <h2>Parks</h2>
     <nav class="navbar bg-body-tertiary">
       <div class="d-flex justify-content-start">
@@ -121,11 +121,11 @@ const filteredParks = computed(() => {
     </div>
 
 
-    <div v-if="selectedPark" class="modal fade show" tabindex="-1" style="display: block;">
-      <div class="modal-dialog modal-lg">
+    <div v-if="selectedPark" class="modal fade show mobile-modal" tabindex="-1" style="display: block;">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header d-flex justify-content-between align-items-center">
-            <h5 class="modal-title mx-auto">{{ selectedPark.name }}</h5>
+            <h5 class="modal-title mx-auto text-truncate">{{ selectedPark.name }}</h5>
             <button type="button" class="btn btn-primary" @click="closeModal">
               <i class="bi bi-x"></i>
             </button>
@@ -162,6 +162,7 @@ const filteredParks = computed(() => {
 }
 
 .modal-dialog {
+  max-height: 800px;
   max-width: 800px;
   width: 100%;
 }
@@ -206,5 +207,44 @@ const filteredParks = computed(() => {
 .btn-outline-success:hover{
   color: white;
   background: #00e300;
+}
+
+/* Fullscreen modal for mobile */
+@media (max-width: 576px) {
+  .mobile-modal .modal-dialog {
+    max-width: 100%;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .mobile-modal .modal-content {
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .mobile-modal .modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .mobile-modal .modal-title {
+    font-size: 1.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-modal .modal-body {
+    padding: 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-modal .btn-primary {
+    padding: 0.5rem;
+  }
 }
 </style>

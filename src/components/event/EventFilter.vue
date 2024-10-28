@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>Event Filter</h1>
+    <h1 class="mt-3">Event Filter</h1>
     <hr>
     <div class="col mb-5">
       <form class="row g-3" @submit="handleSubmit">

@@ -272,6 +272,7 @@ onMounted(async () => {
       <div class="card-body">
         <h3>Parks</h3>
         <div class="row text-center">
+          <!-- Button for creating a new park -->
           <div class="col-md-6 mb-3">
             <router-link to="/createpark" class="btn btn-primary me-2">Create New Park</router-link>
           </div>
@@ -287,29 +288,48 @@ onMounted(async () => {
       <div class="card mb-3">
         <div class="card-body">
           <h3 class="card-title mb-3">All Created Events</h3>
-          <div class="row row-cols-1 row-cols-md-2 g-4 mt-2">
-            <div v-for="(event, index) in paginatedEvents" :key="event.id" class="event-card col">
-              <EventCard :event="event"/>
-              <div class="d-flex justify-content-between mt-3 mb-3">
+
+          <!-- Event Cards Section -->
+          <div class="row row-cols-1 row-cols-md-1 row-cols-lg-3 g-4 mt-2">
+            <div
+                v-for="(event, index) in paginatedEvents"
+                :key="event.id"
+                class="event-card col mb-4"
+                style="padding-bottom: 2rem; border-bottom: 1px solid #e0e0e0"
+            >
+              <EventCard :event="event" />
+              <div class="d-flex justify-content-between mt-3">
                 <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
                 <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
               </div>
             </div>
           </div>
 
-          <nav aria-label="Event page navigation">
-            <ul class="pagination justify-content-center">
+          <!-- Pagination Section -->
+          <nav aria-label="Event page navigation" class="mt-4">
+            <ul class="pagination justify-content-center flex-wrap">
+              <!-- Previous Button -->
               <li class="page-item" :class="{ disabled: eventPage === 1 }">
                 <button class="page-link" @click="prevEventPage">Previous</button>
               </li>
-              <li class="page-item" v-for="page in totalEventPages" :key="page" :class="{ active: eventPage === page }">
+
+              <!-- Page Number Buttons -->
+              <li
+                  v-for="page in totalEventPages"
+                  :key="page"
+                  class="page-item"
+                  :class="{ active: eventPage === page }"
+              >
                 <button class="page-link" @click="goToEventPage(page)">{{ page }}</button>
               </li>
+
+              <!-- Next Button -->
               <li class="page-item" :class="{ disabled: eventPage === totalEventPages }">
                 <button class="page-link" @click="nextEventPage">Next</button>
               </li>
             </ul>
           </nav>
+
         </div>
       </div>
     </div>
@@ -325,7 +345,7 @@ onMounted(async () => {
               No files available.
             </div>
             <div v-else>
-              <table class="table table-bordered">
+              <table class="table table-responsive-sm">
                 <thead>
                 <tr>
                   <th>Preview</th>
@@ -391,9 +411,9 @@ onMounted(async () => {
             No users found matching your search.
           </div>
 
-          <!-- Users Table -->
+
           <div id="app">
-            <table class="table table-bordered">
+            <table class="table table-responsive-sm">
               <thead>
               <tr>
                 <th>Username</th>
