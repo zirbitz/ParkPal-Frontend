@@ -1,9 +1,8 @@
 <script setup>
 import {computed, onMounted, ref} from 'vue';
-import { useRoute } from "vue-router";
+import {useRoute} from "vue-router";
 import axios from "axios";
 import { API_ROUTES } from "@/apiRoutes.js";
-import placeholderImage from '/src/assets/images/people.png';
 import {fetchUserIdAndRole} from "@/service/authService.js";
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -27,9 +26,9 @@ const isUnjoining = ref(false);
 const heartContainer = ref(null);
 const joinedUserNames = ref([]);
 const joinedUserIds = ref([]);
-const joinedUserPictures = ref( []);
+const joinedUserPictures = ref([]);
 const currentPage = ref(1);
-const pageSize = 4;
+const pageSize = 2;
 
 //TODO: add better styling for carousel!
 // Function to fetch the event by ID
@@ -84,7 +83,6 @@ const geocodeAddress = async (park) => {
 };
 
 
-
 // Function to update the map location based on geocoded lat/lng
 const updateMapLocation = () => {
   if (event.value && event.value.lat && event.value.lng) {
@@ -120,11 +118,11 @@ const fetchJoinedUserProfilePictures = async () => {
               });
               return URL.createObjectURL(pictureResponse.data);
             } else {
-              return placeholderImage;
+              return
             }
           } catch (error) {
             console.error(`Error fetching profile picture for user ${userId}:`, error);
-            return placeholderImage;
+            return
           }
         })
     );
@@ -132,7 +130,6 @@ const fetchJoinedUserProfilePictures = async () => {
     console.error('Error fetching joined users profile pictures:', error);
   }
 };
-
 
 
 // Function to toggle join/unjoin event participation
@@ -148,17 +145,21 @@ const toggleJoin = async () => {
     // Trigger animations for joining/unjoining
     if (userCurrentlyJoined) {
       isUnjoining.value = true;
-      setTimeout(() => { isUnjoining.value = false; }, 600);
+      setTimeout(() => {
+        isUnjoining.value = false;
+      }, 600);
     } else {
       isJoining.value = true;
-      setTimeout(() => { isJoining.value = false; }, 600);
+      setTimeout(() => {
+        isJoining.value = false;
+      }, 600);
     }
 
     // Determine join or unjoin action
     const isJoiningAction = !userCurrentlyJoined;
 
     // Make API call to join/unjoin event
-    await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.value.id, isJoiningAction), null, { withCredentials: true });
+    await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.value.id, isJoiningAction), null, {withCredentials: true});
 
     // Update local join state after the join/unjoin action
     event.value.joinedUserIds = isJoiningAction
@@ -177,7 +178,7 @@ const toggleJoin = async () => {
 };
 
 const formatDate = (date) => {
-  const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+  const options = {year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'};
   return new Date(date).toLocaleDateString(undefined, options);
 };
 const truncateDescription = (description) => {
@@ -196,7 +197,7 @@ const prevSlide = () => {
 // Function to fetch joined users
 const fetchJoinedUsers = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/events/${event.value.id}`, {withCredentials:true});
+    const response = await axios.get(`http://localhost:8080/events/${event.value.id}`, {withCredentials: true});
     joinedUserNames.value = response.data.joinedUserNames || [];
     joinedUserIds.value = response.data.joinedUserIds || [];
     await fetchJoinedUserProfilePictures();
@@ -204,6 +205,7 @@ const fetchJoinedUsers = async () => {
     console.error('Error fetching joined users:', error);
   }
 };
+
 
 // Fetch park information based on the event's parkId
 const fetchParkInfo = async () => {
@@ -261,7 +263,7 @@ const fetchEventTags = async () => {
     const tagIds = event.value.eventTagsIds || [];
     const tagNames = await Promise.all(
         tagIds.map(async (tagId) => {
-          const response = await axios.get(`http://localhost:8080/event-tags/${tagId}`, {withCredentials:true});
+          const response = await axios.get(`http://localhost:8080/event-tags/${tagId}`, {withCredentials: true});
           console.log(response.data.name)
           return response.data.name;
         })
@@ -290,11 +292,10 @@ const fetchCreatorUsername = async (creatorUserId) => {
         });
         creatorImageUrl.value = URL.createObjectURL(pictureResponse.data);
       } catch (error) {
-        console.error(`Error fetching profile picture for creator ${creatorUserId}:`, error);
-        creatorImageUrl.value = placeholderImage; // Use placeholder if there's an error
+        console.error(`Error fetching profile picture for creator ${creatorUserId}:`, error);// Use placeholder if there's an error
       }
     } else {
-      creatorImageUrl.value = placeholderImage; // Use placeholder if no profile picture is available
+      // Use placeholder if no profile picture is available
     }
   } catch (error) {
     console.error('Error fetching creator username:', error);
@@ -308,21 +309,22 @@ const fetchEventImages = async (mediaFileIds) => {
       const imageUrls = await Promise.all(
           mediaFileIds.map(async (fileId) => {
             try {
-              const response = await axios.get(`${API_ROUTES.MINIO}/${fileId}`, { responseType: 'blob', withCredentials: true });
+              const response = await axios.get(`${API_ROUTES.MINIO}/${fileId}`, {
+                responseType: 'blob',
+                withCredentials: true
+              });
               if (response.data.size > 0) {
                 return URL.createObjectURL(response.data);
-              } else {
-                return placeholderImage;
               }
             } catch (error) {
               console.error(`Error fetching image for fileId ${fileId}:`, error);
-              return placeholderImage;
+
             }
           })
       );
       eventImageUrls.value = imageUrls;
     } else {
-      eventImageUrls.value = [placeholderImage];
+      return
     }
   } catch (error) {
     console.error('Error fetching event images:', error);
@@ -379,47 +381,10 @@ onMounted(async () => {
 <template>
   <div class="container" v-if="event">
     <!-- Event Banner -->
-    <section class="banner">
-      <div class="carousel-container">
-        <!-- Display images in a banner carousel format -->
-        <div
-            class="carousel-slide"
-            :style="{ width: `${eventImageUrls.length * 100}%`, transform: `translateX(-${currentSlide * 100 / eventImageUrls.length}%)` }"
-        >
-          <div
-              v-for="(url, index) in eventImageUrls"
-              :key="index"
-              class="slide"
-              :style="{ width: `${100 / eventImageUrls.length}%` }"
-          >
-            <img
-                class="event-images large-banner"
-                :src="url"
-                :alt="url === placeholderImage ? 'Placeholder Image' : truncateDescription(event.description)"
-            />
-          </div>
-        </div>
-        <!-- Carousel navigation controls -->
-        <button
-            v-if="eventImageUrls.length > 1"
-            class="prev"
-            @click="prevSlide"
-        >
-          ❮
-        </button>
-        <button
-            v-if="eventImageUrls.length > 1"
-            class="next"
-            @click="nextSlide"
-        >
-          ❯
-        </button>
-      </div>
-    </section>
     <div class="event-content">
       <section class="event-info">
         <div class="event-header">
-          <h1 class="event-title">{{ event.title || 'No title available' }}</h1>
+          <h2 class="event-title mt-3">{{ event.title || 'No title available' }}</h2>
         </div>
 
         <section class="tags">
@@ -439,15 +404,23 @@ onMounted(async () => {
           </div>
         </section>
 
+        <section class="event-img mt-3">
+          <div v-if="eventImageUrls.length > 0" class="carousel-container" :style="{ height: 300 + 'px' }">
+            <button v-if="eventImageUrls.length > 1" class="carousel-btn prev" @click="prevSlide">❮</button>
+            <img :src="eventImageUrls[currentSlide]" alt="Event Image" class="carousel-image" />
+            <button v-if="eventImageUrls.length > 1" class="carousel-btn next" @click="nextSlide">❯</button>
+          </div>
+        </section>
+
+
         <div class="event-description">
           <p>{{ event.description || 'No description available' }}</p>
         </div>
 
 
-
         <section class="creator-info">
           <router-link :to="{ name: 'PublicUserProfile', params: { userId: event.creatorUserId } }" class="user-link">
-            <h4 class="me-5">Event created by:</h4>
+            <h4 class="me-5">created by:</h4>
             <img
                 v-if="creatorImageUrl"
                 :src="creatorImageUrl"
@@ -465,14 +438,13 @@ onMounted(async () => {
         </section>
 
 
-
-
         <!-- Joined Users Section -->
         <section class="joined-users">
           <h3>Joined Users</h3>
           <div class="user-list">
             <div v-for="(username, index) in paginatedJoinedUsers" :key="joinedUserIds[index]" class="user-card">
-              <router-link :to="{ name: 'PublicUserProfile', params: { userId: joinedUserIds[index] } }" class="user-card-link">
+              <router-link :to="{ name: 'PublicUserProfile', params: { userId: joinedUserIds[index] } }"
+                           class="user-card-link">
                 <img
                     v-if="joinedUserPictures && joinedUserPictures[(currentPage - 1) * pageSize + index]"
                     :src="joinedUserPictures[(currentPage - 1) * pageSize + index]"
@@ -510,7 +482,7 @@ onMounted(async () => {
       </section>
     </div>
     <!-- Join Event Button -->
-    <div class="join-section">
+    <div class="join-section mb-3">
       <div class="heart-container" ref="heartContainer"></div>
       <a
           href="#"
@@ -528,39 +500,55 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+
 .carousel-container {
   position: relative;
   width: 100%;
-  max-height: 100%;
+  max-width: 800px; /* Define max width */
   overflow: hidden;
-  margin-bottom: 20px;
+  border-radius: 10px; /* Rounded corners */
+  margin: 0 auto; /* Center alignment */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow for depth */
 }
 
 .carousel-slide {
   display: flex;
-  transition: transform 0.5s ease-in-out;
+  transition: transform 0.5s ease; /* Smooth transition for sliding */
+}
+
+.slide {
+  flex: 1 0 100%; /* Each slide takes full width */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.event-images {
+  width: 100%;
+  height: 400px;
+  object-fit: cover; /* Maintain aspect ratio and crop to fit */
+  border-radius: 10px;
+}
+
+/* Navigation Buttons */
+.prev, .next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 2rem;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.slide img.large-banner {
-  width: 100%;
-  min-height: 200px;
-  max-height: 400px;
-  object-fit: cover;
-}
-
-.prev, .next {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-  font-size: 1.5rem;
-  z-index: 1;
+  transition: background-color 0.3s ease;
+  z-index: 10;
 }
 
 .prev {
@@ -571,50 +559,16 @@ onMounted(async () => {
   right: 10px;
 }
 
-.carousel-container {
-  position: relative;
+.prev:hover, .next:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Carousel Image Container */
+.carousel-image {
+  border-radius: 10px;
+  object-fit: cover;
   width: 100%;
   height: 100%;
-}
-
-.carousel-slide {
-  display: flex;
-  transition: transform 0.5s ease-in-out;
-}
-
-.slide img {
-  width: 100%;
-  height: auto;
-}
-
-.prev, .next {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-}
-
-.prev {
-  left: 10px;
-}
-
-.next {
-  right: 10px;
-}
-
-.container {
-  display: flex;
-  flex-direction: column;
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-}
-
-.banner {
-  margin-bottom: 20px;
 }
 
 .event-content {
@@ -642,7 +596,7 @@ onMounted(async () => {
 }
 
 .badge {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: bolder;
   margin-right: 2rem;
   background: white;
@@ -653,7 +607,7 @@ onMounted(async () => {
 
 .event-description {
   margin-bottom: 20px;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
 
 }
 
@@ -808,7 +762,7 @@ onMounted(async () => {
 }
 
 .address-info {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-style: oblique;
 }
 
@@ -827,8 +781,8 @@ onMounted(async () => {
 }
 
 .profile-picture {
-  width: 100px;   /* Set specific size */
-  height: 100px;  /* Set specific size */
+  width: 100px; /* Set specific size */
+  height: 100px; /* Set specific size */
   border-radius: 50%; /* Make the profile picture circular */
   object-fit: cover; /* Ensures the image is cropped to fit within the circle */
 }
@@ -837,6 +791,7 @@ onMounted(async () => {
   margin-top: 10px;
   font-weight: bold;
 }
+
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -845,6 +800,7 @@ onMounted(async () => {
   margin-top: 20px;
   width: 100%;
 }
+
 button {
   padding: 5px 10px;
   border: 1px solid #ddd;
@@ -906,6 +862,7 @@ button:disabled {
     margin-bottom: 10px;
   }
 }
+
 .event-description {
   background-color: #f9f9f9; /* Light background similar to the times section */
   padding: 20px;
@@ -918,7 +875,7 @@ button:disabled {
 
 .event-description p {
   margin: 0;
-  font-size: 1.1em;
+  font-size: 1em;
   line-height: 1.6;
   color: #333;
 }
