@@ -2,6 +2,7 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-md-5">
+        <div v-if="flashMessage" class="alert alert-success">{{ flashMessage }}</div>
         <div class="card mt-3 mb-5 login-card">
           <div class="card-body">
             <div class="card-logo">
@@ -120,7 +121,17 @@ export default {
       errorMessage: '',
       emailError: '',
       passwordError: '',
+      flashMessage: ''
     };
+  },
+  created() {
+    // Retrieve the flash message from sessionStorage if it exists
+    this.flashMessage = sessionStorage.getItem('flashMessage') || '';
+    if (this.flashMessage) {
+      // Remove the flash message so it doesn't show again on page reload
+      sessionStorage.removeItem('flashMessage');
+      window.scrollTo(0, 0);
+    }
   },
   methods: {
     ...mapActions(['login']),
@@ -131,7 +142,6 @@ export default {
       let valid = true;
       this.emailError = '';
       this.passwordError = '';
-
       if (!this.email) {
         this.emailError = "Email field cannot be blank.";
         valid = false;
@@ -144,6 +154,8 @@ export default {
 
       return valid;
     },
+
+
     async submitForm() {
       if (!this.validateInputs()) {
         return;

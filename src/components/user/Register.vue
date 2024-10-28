@@ -91,13 +91,10 @@ export default {
 
       try {
         const response = await axios.post(API_ROUTES.AUTH_REGISTER, formData);
-        this.showFlashMessage = true;
-        this.flashMessageText = 'Registration successful';
-        setTimeout(() => {
-          this.showSuccessMessage = false;
-          this.showFlashMessage = false;
-        }, 3000);
         this.resetForm();
+        // Store flash message in sessionStorage
+        sessionStorage.setItem('flashMessage', 'Registration successful');
+        this.$router.push({ name: 'Login' });
       } catch (error) {
         console.error('Fetch error:', error);
         this.passwordError = error.response?.data.errors?.join('\n') ?? '';
