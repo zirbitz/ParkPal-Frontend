@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import { useRoute } from "vue-router";
 import axios from "axios";
 import { API_ROUTES } from "@/apiRoutes.js";
@@ -25,6 +25,11 @@ const isUserJoined = ref(false);
 const isJoining = ref(false);
 const isUnjoining = ref(false);
 const heartContainer = ref(null);
+const joinedUserNames = ref([]);
+const joinedUserIds = ref([]);
+const joinedUserPictures = ref( []);
+const currentPage = ref(1);
+const pageSize = 4;
 
 //TODO: add better styling for carousel!
 // Function to fetch the event by ID
@@ -100,10 +105,39 @@ const checkUserJoined = () => {
   return event.value?.joinedUserIds?.includes(userId.value);
 };
 
+const fetchJoinedUserProfilePictures = async () => {
+  try {
+    joinedUserPictures.value = await Promise.all(
+        event.value.joinedUserIds.map(async (userId) => {
+          try {
+            const userResponse = await axios.get(API_ROUTES.USERS_BY_ID(userId));
+            const profilePictureId = userResponse.data.profilePictureId;
+
+            if (profilePictureId) {
+              // Fetch the profile picture from MinIO using the profilePictureId
+              const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${profilePictureId}`, {
+                responseType: 'blob',
+              });
+              return URL.createObjectURL(pictureResponse.data);
+            } else {
+              return placeholderImage;
+            }
+          } catch (error) {
+            console.error(`Error fetching profile picture for user ${userId}:`, error);
+            return placeholderImage;
+          }
+        })
+    );
+  } catch (error) {
+    console.error('Error fetching joined users profile pictures:', error);
+  }
+};
+
+
+
 // Function to toggle join/unjoin event participation
 const toggleJoin = async () => {
   try {
-    // Check if user is already joined
     const userCurrentlyJoined = checkUserJoined();
 
     // Emit heart animation only if joining
@@ -111,7 +145,7 @@ const toggleJoin = async () => {
       emitHeart();
     }
 
-    // Trigger animations
+    // Trigger animations for joining/unjoining
     if (userCurrentlyJoined) {
       isUnjoining.value = true;
       setTimeout(() => { isUnjoining.value = false; }, 600);
@@ -124,18 +158,18 @@ const toggleJoin = async () => {
     const isJoiningAction = !userCurrentlyJoined;
 
     // Make API call to join/unjoin event
-    const response = await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.value.id, isJoiningAction), null, { withCredentials: true });
+    await axios.post(API_ROUTES.EVENTS_PARTICIPATION(event.value.id, isJoiningAction), null, { withCredentials: true });
 
-    // Update event data with the latest joined users
+    // Update local join state after the join/unjoin action
     event.value.joinedUserIds = isJoiningAction
         ? [...event.value.joinedUserIds, userId.value]
         : event.value.joinedUserIds.filter(id => id !== userId.value);
 
-    // Update event names from response
-    event.value.joinedUserNames = Array.isArray(response.data) ? response.data : [];
-
     // Refresh join state to reflect the change
     isUserJoined.value = checkUserJoined();
+
+    // Fetch updated joined users and their profile pictures
+    await fetchJoinedUsers();
 
   } catch (error) {
     console.error('Error updating event:', error);
@@ -162,12 +196,10 @@ const prevSlide = () => {
 // Function to fetch joined users
 const fetchJoinedUsers = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/event/${event.value.id}`);
-    const joinedUserNames = response.data.joinedUserNames || [];
-    const joinedUserIds = response.data.joinedUserIds || [];
-    event.value.joinedUserNames = joinedUserNames;
-    event.value.joinedUserIds = joinedUserIds;
-    isUserJoined.value = checkUserJoined();
+    const response = await axios.get(`http://localhost:8080/events/${event.value.id}`, {withCredentials:true});
+    joinedUserNames.value = response.data.joinedUserNames || [];
+    joinedUserIds.value = response.data.joinedUserIds || [];
+    await fetchJoinedUserProfilePictures();
   } catch (error) {
     console.error('Error fetching joined users:', error);
   }
@@ -198,7 +230,30 @@ const fetchParkInfo = async () => {
   }
 };
 
+const paginatedJoinedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  const end = start + pageSize;
+  return joinedUserNames.value.slice(start, end);
+});
 
+// Total pages based on joined users length
+const totalPages = computed(() => {
+  return Math.ceil(joinedUserNames.value.length / pageSize);
+});
+
+// Function to go to the previous page
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+}
+
+// Function to go to the next page
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+}
 
 // Fetch event tags based on tag IDs
 const fetchEventTags = async () => {
@@ -206,7 +261,8 @@ const fetchEventTags = async () => {
     const tagIds = event.value.eventTagsIds || [];
     const tagNames = await Promise.all(
         tagIds.map(async (tagId) => {
-          const response = await axios.get(`${API_ROUTES.EVENT_TAGS}/${tagId}`);
+          const response = await axios.get(`http://localhost:8080/event-tags/${tagId}`, {withCredentials:true});
+          console.log(response.data.name)
           return response.data.name;
         })
     );
@@ -216,12 +272,30 @@ const fetchEventTags = async () => {
   }
 };
 
+
 // Function to fetch the creator's username
 const fetchCreatorUsername = async (creatorUserId) => {
   try {
     const response = await axios.get(API_ROUTES.USERS_BY_ID(creatorUserId));
     creatorUsername.value = response.data.userName;
-    creatorImageUrl.value = response.data.profilePicture || null;
+
+    const profilePictureId = response.data.profilePictureId;
+
+    if (profilePictureId) {
+      // Fetch the profile picture from MinIO using the profilePictureId
+      try {
+        const pictureResponse = await axios.get(`${API_ROUTES.MINIO}/${profilePictureId}`, {
+          responseType: 'blob',
+          withCredentials: true,
+        });
+        creatorImageUrl.value = URL.createObjectURL(pictureResponse.data);
+      } catch (error) {
+        console.error(`Error fetching profile picture for creator ${creatorUserId}:`, error);
+        creatorImageUrl.value = placeholderImage; // Use placeholder if there's an error
+      }
+    } else {
+      creatorImageUrl.value = placeholderImage; // Use placeholder if no profile picture is available
+    }
   } catch (error) {
     console.error('Error fetching creator username:', error);
   }
@@ -288,6 +362,8 @@ onMounted(async () => {
 
   // Set the initial join state once the event data is available
   isUserJoined.value = checkUserJoined();
+  await fetchJoinedUsers();
+  await fetchJoinedUserProfilePictures();
 
   // Initialize the map
   initMap();
@@ -295,6 +371,7 @@ onMounted(async () => {
   // Fetch park info and update map location after geocoding
   await fetchParkInfo();
   updateMapLocation();
+
 });
 
 </script>
@@ -304,67 +381,134 @@ onMounted(async () => {
     <!-- Event Banner -->
     <section class="banner">
       <div class="carousel-container">
-        <div class="carousel-slide" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
-          <div v-for="(url, index) in eventImageUrls" :key="index" class="slide">
+        <!-- Display images in a banner carousel format -->
+        <div
+            class="carousel-slide"
+            :style="{ width: `${eventImageUrls.length * 100}%`, transform: `translateX(-${currentSlide * 100 / eventImageUrls.length}%)` }"
+        >
+          <div
+              v-for="(url, index) in eventImageUrls"
+              :key="index"
+              class="slide"
+              :style="{ width: `${100 / eventImageUrls.length}%` }"
+          >
             <img
-                class="event-images"
+                class="event-images large-banner"
                 :src="url"
                 :alt="url === placeholderImage ? 'Placeholder Image' : truncateDescription(event.description)"
             />
           </div>
         </div>
-        <!-- Carousel controls -->
-        <button v-if="eventImageUrls.length > 1" class="prev" @click="prevSlide">❮</button>
-        <button v-if="eventImageUrls.length > 1" class="next" @click="nextSlide">❯</button>
+        <!-- Carousel navigation controls -->
+        <button
+            v-if="eventImageUrls.length > 1"
+            class="prev"
+            @click="prevSlide"
+        >
+          ❮
+        </button>
+        <button
+            v-if="eventImageUrls.length > 1"
+            class="next"
+            @click="nextSlide"
+        >
+          ❯
+        </button>
       </div>
     </section>
+    <div class="event-content">
+      <section class="event-info">
+        <div class="event-header">
+          <h1 class="event-title">{{ event.title || 'No title available' }}</h1>
+        </div>
 
-    <!-- Event Information Section -->
-    <section class="event-info">
-      <div class="event-header">
-        <h1 class="event-title">{{ event.title || 'No title available' }}</h1>
+        <section class="tags">
+          <div v-if="eventTagNames?.length" class="event-tags">
+            <span v-for="(tagName, index) in eventTagNames" :key="index" class="badge">{{ tagName }}</span>
+          </div>
+        </section>
+
+        <section class="times">
+          <div class="time-item">
+            <span class="time-icon">🕒</span>
+            <p><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
+          </div>
+          <div class="time-item">
+            <span class="time-icon">⏰</span>
+            <p><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
+          </div>
+        </section>
+
+        <div class="event-description">
+          <p>{{ event.description || 'No description available' }}</p>
+        </div>
+
+
+
+        <section class="creator-info">
+          <router-link :to="{ name: 'PublicUserProfile', params: { userId: event.creatorUserId } }" class="user-link">
+            <h4 class="me-5">Event created by:</h4>
+            <img
+                v-if="creatorImageUrl"
+                :src="creatorImageUrl"
+                :alt="creatorUsername + '\'s Profile Picture'"
+                class="profile-picture"
+            />
+            <img
+                v-else
+                src="/src/assets/images/default-profile.png"
+                alt="Default Profile Picture"
+                class="profile-picture"
+            />
+            <h4 class="username">{{ creatorUsername }}</h4>
+          </router-link>
+        </section>
+
+
+
+
+        <!-- Joined Users Section -->
+        <section class="joined-users">
+          <h3>Joined Users</h3>
+          <div class="user-list">
+            <div v-for="(username, index) in paginatedJoinedUsers" :key="joinedUserIds[index]" class="user-card">
+              <router-link :to="{ name: 'PublicUserProfile', params: { userId: joinedUserIds[index] } }" class="user-card-link">
+                <img
+                    v-if="joinedUserPictures && joinedUserPictures[(currentPage - 1) * pageSize + index]"
+                    :src="joinedUserPictures[(currentPage - 1) * pageSize + index]"
+                    :alt="username + '\'s Profile Picture'"
+                    class="profile-picture"
+                />
+                <img
+                    v-else
+                    src="/src/assets/images/default-profile.png"
+                    alt="Default Profile Picture"
+                    class="profile-picture"
+                />
+                <div class="username">{{ username }}</div>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="pagination-controls">
+            <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
+            <span>Page {{ currentPage }} of {{ totalPages }}</span>
+            <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+          </div>
+        </section>
+      </section>
+
+      <!-- Event Map Section -->
+      <section class="event-map">
         <h3 class="park-name">
-          Hosted at:
+          Park:
           <router-link :to="{ name: 'ParksOverview' }">{{ parkName }}</router-link>
         </h3>
-        <p>{{ fullAddress }}</p>
-      </div>
-
-      <!-- Tags -->
-      <div v-if="eventTagNames?.length" class="event-tags">
-        <span v-for="(tagName, index) in eventTagNames" :key="index" class="badge">{{ tagName }}</span>
-      </div>
-
-      <!-- Event Description -->
-      <div class="event-description">
-        <p>{{ event.description || 'No description available' }}</p>
-        <p><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-        <p><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
-      </div>
-
-      <!-- Creator Info -->
-      <div class="creator-info">
-        <p><strong>Creator:</strong>
-          <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
-        </p>
-      </div>
-    </section>
-
-    <section class="event-map">
-      <div id="map" style="height: 300px; width: 100%;"></div>
-    </section>
-
-
-    <!-- Joined Users Section -->
-    <section class="joined-users">
-      <h3>Joined Users</h3>
-      <ul>
-        <li v-for="(username, index) in event.joinedUserNames || []" :key="username">
-          <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
-        </li>
-      </ul>
-    </section>
-
+        <p class="address-info">{{ fullAddress }}</p>
+        <div id="map" style="height: 300px; width: 100%;"></div>
+      </section>
+    </div>
     <!-- Join Event Button -->
     <div class="join-section">
       <div class="heart-container" ref="heartContainer"></div>
@@ -384,16 +528,47 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.container {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+.carousel-container {
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  margin-bottom: 20px;
 }
 
-.banner {
+.carousel-slide {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide img.large-banner {
   width: 100%;
+  min-height: 200px;
   max-height: 400px;
-  overflow: hidden;
-  margin-bottom: 30px;
+  object-fit: cover;
+}
+
+.prev, .next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  z-index: 1;
+}
+
+.prev {
+  left: 10px;
+}
+
+.next {
+  right: 10px;
 }
 
 .carousel-container {
@@ -431,23 +606,35 @@ onMounted(async () => {
   right: 10px;
 }
 
-.event-info {
+.container {
   display: flex;
   flex-direction: column;
-  margin-bottom: 30px;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
-.event-header {
+.banner {
   margin-bottom: 20px;
 }
 
-.event-title {
-  font-size: 3rem;
-  margin-bottom: 10px;
+.event-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.park-name {
-  font-size: 2em;
+.event-info {
+  flex: 1;
+  min-width: 300px;
+}
+
+.event-map {
+  flex: 1;
+  min-width: 300px;
+}
+
+.joined-users, .join-section {
+  margin-top: 20px;
 }
 
 .event-tags {
@@ -455,23 +642,145 @@ onMounted(async () => {
 }
 
 .badge {
-  background-color: #f0f0f0;
-  margin-right: 5px;
-  padding: 5px;
-  font-size: 0.9rem;
-  border-radius: 5px;
+  font-size: 1.25rem;
+  font-weight: bolder;
+  margin-right: 2rem;
+  background: white;
+  color: #B00101;
+  border: 2px solid #B00101;
+  border-radius: 15px;
 }
 
 .event-description {
   margin-bottom: 20px;
+  font-size: 1.25rem;
+
 }
 
 .creator-info {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background-color: #f9f9f9; /* Light background color */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
   margin-bottom: 20px;
 }
 
+.creator-info h4 {
+  margin: 0 10px 0 0;
+}
+
+.creator-info .profile-picture {
+  width: 60px; /* Larger profile picture */
+  height: 60px;
+  border-radius: 50%; /* Make it circular */
+  object-fit: cover; /* Ensure image covers the entire area */
+  margin-right: 15px; /* Space between the picture and the username */
+  border: 2px solid #ddd; /* Border for the profile picture */
+}
+
+.user-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.creator-info .username {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #B00101;
+  text-decoration: none;
+}
+
+.creator-info:hover {
+  background-color: #eaeaea; /* Slight background change on hover */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); /* Increase shadow on hover */
+  transition: all 0.3s ease-in-out;
+}
+
+.creator-info a {
+  color: inherit; /* Keep the text color unchanged */
+}
+
+
 .joined-users {
-  margin-bottom: 30px;
+  padding: 15px;
+  background-color: #f9f9f9; /* Light background color */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  margin-bottom: 20px;
+}
+
+.joined-users h3 {
+  font-size: 1.2em;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.user-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center content horizontally */
+  padding: 10px;
+  background-color: #fff; /* White background for each user card */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Light shadow for depth */
+  text-align: center; /* Center-align text inside */
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.user-card:hover {
+  background-color: #eaeaea; /* Slight background change on hover */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); /* Increase shadow on hover */
+}
+
+.user-card .profile-picture {
+  width: 50px; /* Profile picture size */
+  height: 50px;
+  border-radius: 50%; /* Circular image */
+  object-fit: cover; /* Image fills the circle */
+  margin-right: 10px; /* Spacing between image and text */
+  border: 2px solid #ddd; /* Light border */
+}
+
+.user-card .username {
+  font-size: 1em;
+  font-weight: bold;
+  color: #B00101; /* Text color similar to creator's username */
+  text-decoration: none;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.pagination-controls button {
+  padding: 8px 12px;
+  background-color: #B00101;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.pagination-controls button:hover {
+  background-color: #8b0101; /* Darker shade on hover */
+}
+
+.pagination-controls span {
+  margin: 0 10px;
+  font-size: 0.9em;
 }
 
 .join-section {
@@ -496,5 +805,133 @@ onMounted(async () => {
 .event-map {
   margin-top: 20px;
   margin-bottom: 20px;
+}
+
+.address-info {
+  font-size: 1.25rem;
+  font-style: oblique;
+}
+
+.user-card {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  text-align: center;
+  width: 150px; /* Set width for user cards */
+}
+
+.user-card-link {
+  text-decoration: none; /* Remove underline from links */
+  color: inherit; /* Inherit color from parent */
+  display: block; /* Make the entire card clickable */
+}
+
+.profile-picture {
+  width: 100px;   /* Set specific size */
+  height: 100px;  /* Set specific size */
+  border-radius: 50%; /* Make the profile picture circular */
+  object-fit: cover; /* Ensures the image is cropped to fit within the circle */
+}
+
+.username {
+  margin-top: 10px;
+  font-weight: bold;
+}
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+button {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+  color: black;
+}
+
+.user-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.times {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+  font-family: Arial, sans-serif;
+}
+
+.time-item {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between icon and text */
+}
+
+.time-icon {
+  font-size: 1.4em;
+  color: #B00101; /* Blue color for icons to match the theme */
+}
+
+.times p {
+  margin: 0;
+  font-size: 1.1em;
+  color: #333;
+}
+
+.times strong {
+  color: #B00101; /* Consistent blue accent color */
+}
+
+@media (max-width: 600px) {
+  .times {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .time-item {
+    margin-bottom: 10px;
+  }
+}
+.event-description {
+  background-color: #f9f9f9; /* Light background similar to the times section */
+  padding: 20px;
+  border-left: 4px solid #B00101; /* Blue accent border to match the theme */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  font-family: Arial, sans-serif;
+  margin-top: 20px;
+}
+
+.event-description p {
+  margin: 0;
+  font-size: 1.1em;
+  line-height: 1.6;
+  color: #333;
+}
+
+.event-description p::first-letter {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #B00101; /* First letter color to match accent */
+}
+
+@media (max-width: 600px) {
+  .event-description {
+    padding: 15px;
+  }
 }
 </style>
