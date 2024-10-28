@@ -127,10 +127,16 @@ export default {
   created() {
     // Retrieve the flash message from sessionStorage if it exists
     this.flashMessage = sessionStorage.getItem('flashMessage') || '';
+
     if (this.flashMessage) {
-      // Remove the flash message so it doesn't show again on page reload
+      // Remove the flash message from sessionStorage to ensure it only shows once
       sessionStorage.removeItem('flashMessage');
       window.scrollTo(0, 0);
+
+      // Set a timeout to clear the flash message after 3 seconds
+      setTimeout(() => {
+        this.flashMessage = '';
+      }, 3000);
     }
   },
   methods: {
