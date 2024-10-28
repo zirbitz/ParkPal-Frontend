@@ -298,7 +298,7 @@ onMounted(async () => {
                 style="padding-bottom: 2rem; border-bottom: 1px solid #e0e0e0"
             >
               <EventCard :event="event" />
-              <div class="d-flex justify-content-between mt-3">
+              <div class="d-flex justify-content-between mb-5">
                 <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
                 <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
               </div>

@@ -385,33 +385,57 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
     </div>
 
-    <div class="card mt-5 mb-2">
-      <div class="card-body">
-        <h2>My Events</h2>
-        <div v-if="events.length > 0" class="row row-cols-1 row-cols-md-2 g-4 mt-2">
-          <div v-for="(event, index) in paginatedEvents" :key="event.id" class="event-card col">
-            <EventCard :event="event" />
-            <div class="d-flex justify-content-between mt-3 mb-3">
-              <button class="btn btn-tertiary" @click="updateEvent(index)">Edit</button>
-              <button class="btn btn-primary" @click="deleteEvent(index)">Delete</button>
+    <div class="col">
+      <div class="card mt-5 mb-2">
+        <div class="card-body">
+          <h2 class="mb-3">My Events</h2>
+
+          <!-- Event Cards Section -->
+          <div v-if="events.length > 0" class="row row-cols-1 row-cols-md-2 g-4 mt-3">
+            <div
+                v-for="(event, index) in paginatedEvents"
+                :key="event.id"
+                class="event-card col mb-4"
+                style="padding-bottom: 2rem; border-bottom: 1px solid #e0e0e0"
+            >
+              <EventCard :event="event" />
+              <div class="d-flex justify-content-between mt-3 mb-3">
+                <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
+                <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
+              </div>
             </div>
           </div>
-        </div>
-        <nav v-if="events.length > 0" aria-label="Event page navigation">
-          <ul class="pagination justify-content-center">
-            <li class="page-item" :class="{ disabled: eventPage === 1 }">
-              <button class="page-link" @click="prevEventPage">Previous</button>
-            </li>
-            <li class="page-item" v-for="page in totalEventPages" :key="page" :class="{ active: eventPage === page }">
-              <button class="page-link" @click="goToEventPage(page)">{{ page }}</button>
-            </li>
-            <li class="page-item" :class="{ disabled: eventPage === totalEventPages }">
-              <button class="page-link" @click="nextEventPage">Next</button>
-            </li>
-          </ul>
-        </nav>
-        <div v-else>
-          <p>No events found.</p>
+
+          <!-- Pagination Section -->
+          <nav v-if="events.length > 0" aria-label="Event page navigation" class="mt-4">
+            <ul class="pagination justify-content-center flex-wrap">
+              <!-- Previous Button -->
+              <li class="page-item" :class="{ disabled: eventPage === 1 }">
+                <button class="page-link" @click="prevEventPage">Previous</button>
+              </li>
+
+              <!-- Page Number Buttons -->
+              <li
+                  v-for="page in totalEventPages"
+                  :key="page"
+                  class="page-item"
+                  :class="{ active: eventPage === page }"
+              >
+                <button class="page-link" @click="goToEventPage(page)">{{ page }}</button>
+              </li>
+
+              <!-- Next Button -->
+              <li class="page-item" :class="{ disabled: eventPage === totalEventPages }">
+                <button class="page-link" @click="nextEventPage">Next</button>
+              </li>
+            </ul>
+          </nav>
+
+          <!-- No Events Message -->
+          <div v-else>
+            <p>No events found.</p>
+          </div>
+
         </div>
       </div>
     </div>
