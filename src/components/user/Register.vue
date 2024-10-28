@@ -54,7 +54,9 @@ export default {
       dsvgoDirty: false,
       showSuccessMessage: false,
       showFlashMessage: false,
-      flashMessageText: ''
+      flashMessageText: '',
+      usernameError: '',
+      emailError: '',
     };
   },
   async created() {
@@ -100,7 +102,16 @@ export default {
         this.resetForm();
       } catch (error) {
         console.error('Fetch error:', error);
-        this.passwordError = error.response?.data.errors?.join('\n') ?? '';
+
+        if (error.response.status === 409) {
+          const errorMessage = error.response.data.message;
+          console.log("errorMessage by 409 httpCode:", errorMessage);
+          if (errorMessage.includes('email')) {
+            this.emailError = `${this.email} already in use`;
+          } else if (errorMessage.includes('username')) {
+            this.usernameError = `${this.username} already taken`;
+          }
+        }
       }
     },
     markAllFieldsDirty() {
@@ -292,24 +303,31 @@ export default {
         <div class="col-md-5">
           <label for="validationServerEmail" class="form-label">E-Mail</label>
           <div class="input-group has-validation">
-            <input type="email" placeholder="your@email.com" class="form-control" :class="{'is-invalid': !emailValid && emailDirty, 'is-valid': emailValid && emailDirty}" id="validationServerEmail" v-model="email" @blur="validateEmail" >
-            <div v-if="!emailValid && emailDirty" class="invalid-feedback">
+            <input type="email" placeholder="your@email.com" class="form-control" :class="{'is-invalid': !emailValid && emailDirty || emailError, 'is-valid': emailValid && emailDirty}" id="validationServerEmail" v-model="email" @blur="validateEmail" >
+            <div v-if="emailError" class="invalid-feedback">
+              {{ emailError }}
+            </div>
+            <div v-if="!emailValid && emailDirty && !emailError" class="invalid-feedback">
               Please choose a valid Email.
             </div>
-            <div v-if="emailValid && emailDirty" class="valid-feedback">
+            <div v-if="emailValid && emailDirty && !emailError" class="valid-feedback">
               Looks good!
             </div>
           </div>
         </div>
+
         <div class="col-md-5 mb-3">
           <label for="validationServerUsername" class="form-label">Username</label>
           <div class="input-group has-validation">
             <span class="input-group-text" id="inputGroupPrepend3">@</span>
-            <input type="text" placeholder="yourUsername" class="form-control" :class="{'is-invalid': !usernameValid && usernameDirty, 'is-valid': usernameValid && usernameDirty}" id="validationServerUsername" v-model="username" @blur="validateUsername">
-            <div v-if="!usernameValid && usernameDirty" class="invalid-feedback">
+            <input type="text" placeholder="yourUsername" class="form-control" :class="{'is-invalid': !usernameValid && usernameDirty || usernameError, 'is-valid': usernameValid && usernameDirty}" id="validationServerUsername" v-model="username" @blur="validateUsername">
+            <div v-if="usernameError" class="invalid-feedback">
+              {{ usernameError }}
+            </div>
+            <div v-if="!usernameValid && usernameDirty && !usernameError" class="invalid-feedback">
               Please choose a username.
             </div>
-            <div v-if="usernameValid && usernameDirty" class="valid-feedback">
+            <div v-if="usernameValid && usernameDirty && !usernameError" class="valid-feedback">
               Looks good!
             </div>
           </div>
