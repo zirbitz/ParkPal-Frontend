@@ -78,7 +78,7 @@ import {fetchUserIdAndRole} from '@/service/authService.js';
 import {useRouter} from "vue-router";
 import axios from "axios";
 import {API_ROUTES} from "@/apiRoutes.js";
-import placeholderImage from '/src/assets/images/people.png';
+import placeholderImage from '/src/assets/images/event.png';
 
 // Accept event as a prop
 const props = defineProps({

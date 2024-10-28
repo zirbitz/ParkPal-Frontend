@@ -1,5 +1,5 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onMounted, onUnmounted, ref} from 'vue';
 import EventCard from "@/components/event/EventCard.vue";
 import axios from 'axios';
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -7,7 +7,7 @@ import {API_ROUTES} from "@/apiRoutes.js";
 const events = ref([]); // All events from API
 const currentPage = ref(1); // Track the current page
 const eventPage = ref(1);
-const eventsPerPage = 4;
+const eventsPerPage = 3;
 
 const totalEventPages = computed(() => Math.ceil(events.value.length / eventsPerPage));
 
@@ -39,6 +39,7 @@ const prevPage = () => {
   }
 };
 
+
 const prevEventPage = () => {
   if (eventPage.value > 1) eventPage.value--;
 };
@@ -68,7 +69,7 @@ const handleUpdateEvent = (updatedEvent) => {
   <div class="container-fluid mb-3">
     <h1 class="text-center mt-3">All Events</h1>
     <hr>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-5">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-3 mb-5">
       <div v-for="(event, index) in paginatedEvents" :key="event.id" class="col d-flex justify-content-center">
         <EventCard :event="event" />
       </div>

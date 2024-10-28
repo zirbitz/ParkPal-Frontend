@@ -107,7 +107,7 @@ onMounted(() => {
         <h2>{{ firstName }}'s Events</h2>
         <div v-if="events.length > 0" class="row row-cols-1 row-cols-md-2 g-4 mt-2">
           <!-- Changed `:events="[event]"` to `:event="event"` -->
-          <div v-for="(event, index) in paginatedEvents" :key="event.id" class="event-card col">
+          <div v-for="(event, index) in paginatedEvents" :key="event.id" class="event-card col mb-3">
             <EventCard :event="event" />
           </div>
         </div>

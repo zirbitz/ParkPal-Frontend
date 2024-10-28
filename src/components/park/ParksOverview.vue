@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import ParkCard from "@/components/park/ParkCard.vue";
 import ParkInfo from "@/components/park/ParkInfo.vue";
 import { API_ROUTES } from "@/apiRoutes.js";
 import axios from "axios";
@@ -32,7 +31,6 @@ const fetchParks = async () => {
 // Fetch event details for a specific park
 const fetchEventDetails = async (park) => {
   try {
-    // Check if eventIds exist and have length
     if (!park.eventIds || park.eventIds.length === 0) {
       console.error('No event IDs found for this park');
       return;
@@ -44,11 +42,10 @@ const fetchEventDetails = async (park) => {
     const eventResponses = await Promise.all(eventPromises);
     const fullEvents = eventResponses.map(response => response.data);
 
-    // Ensure the park gets updated in place to trigger reactivity
     const updatedPark = { ...park, events: fullEvents || [] }; // Default empty array if no events
     const parkIndex = parks.value.findIndex(p => p.id === park.id);
     if (parkIndex !== -1) {
-      parks.value[parkIndex] = updatedPark; // Update park in the array with events
+      parks.value[parkIndex] = updatedPark;
     }
   } catch (error) {
     console.error('Error fetching event details:', error);
@@ -60,24 +57,12 @@ onMounted(() => {
   fetchParks();
 });
 
-// Show ParkInfo modal and fetch detailed event information for modal view
-const showParkSection = (park) => {
-  selectedPark.value = park;  // Select the park for modal view
-};
-
-// Close the modal
-const closeModal = () => {
-  selectedPark.value = null;
-};
-
 const filteredParks = computed(() => {
   const query = searchQuery.value.toLowerCase();
   if (!query) return parks.value;
 
   return parks.value.filter(park => {
     const parkName = park.name ? park.name.toLowerCase() : '';
-
-    // Check if address object exists and concatenate its components
     const parkAddress = park.address
         ? `${park.address.streetNumber || ''} ${park.address.zipCode || ''} ${park.address.city || ''} ${park.address.country?.name || ''}`.toLowerCase()
         : '';
@@ -96,7 +81,7 @@ const filteredParks = computed(() => {
           <input
               class="form-control me-2"
               type="search"
-              placeholder="Search parks by name or address"
+              placeholder="Search parks ..."
               aria-label="Search"
               v-model="searchQuery"
           />
@@ -109,41 +94,14 @@ const filteredParks = computed(() => {
       No parks found matching your search criteria.
     </div>
 
-    <div v-else class="row g-3">
-      <div class="col-12 col-md-6 col-lg-4" v-for="park in filteredParks" :key="park.id">
-        <ParkCard id="park-card"
-                  :title="park.name"
-                  :address="park.address"
-                  :events="park.events || []"
-                  @click="showParkSection(park)">
-        </ParkCard>
-      </div>
-    </div>
-
-
-    <div v-if="selectedPark" class="modal fade show mobile-modal" tabindex="-1" style="display: block;">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header d-flex justify-content-between align-items-center">
-            <h5 class="modal-title mx-auto text-truncate">{{ selectedPark.name }}</h5>
-            <button type="button" class="btn btn-primary" @click="closeModal">
-              <i class="bi bi-x"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div v-if="loadingEvents" class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <div v-else>
-              <ParkInfo
-                  :title="selectedPark.name"
-                  :description="selectedPark.description"
-                  :address="selectedPark.address"
-                  :events="selectedPark.events || []"
-              />
-            </div>
-          </div>
-        </div>
+    <div v-else class="row g-3 justify-content-center park-info-grid">
+      <div class="col-12 col-lg-6" v-for="park in filteredParks" :key="park.id">
+        <ParkInfo
+            :title="park.name"
+            :description="park.description"
+            :address="park.address"
+            :events="park.events || []"
+        />
       </div>
     </div>
   </div>
@@ -151,6 +109,47 @@ const filteredParks = computed(() => {
 
 
 <style scoped>
+.park-info-grid {
+  gap: 20px; /* Additional spacing between cards */
+}
+
+.card {
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card h5 {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.card p {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 576px) {
+  .card h5 {
+    font-size: 1.1rem;
+  }
+
+  .card p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .card {
+    padding: 2rem;
+  }
+}
 .modal-backdrop {
   position: fixed;
   top: 0;
