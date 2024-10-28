@@ -442,7 +442,7 @@ const submitForm = async (event) => {
     showSuccessPopup.value = true;
     setTimeout(() => {
       showSuccessPopup.value = false;
-    }, 3000); // Hide popup after 3 seconds
+    }, 5000); // Hide popup after 3 seconds
 
     resetForm();
 
@@ -464,7 +464,10 @@ const submitForm = async (event) => {
     </div>
     <div v-if="showSuccessPopup" class="alert alert-success mt-3 d-flex justify-content-between align-items-center" role="alert">
       <span>Event successfully created.</span>
-      <router-link :to="{ name: 'EventDetail', params: { eventId: createdEventId } }" class="btn btn-primary">
+      <router-link
+          :to="{ name: 'EventDetail', params: { eventId: createdEventId } }"
+          class="btn btn-primary btn-responsive"
+      >
         View Event
       </router-link>
     </div>
@@ -599,6 +602,13 @@ const submitForm = async (event) => {
 </template>
 
 <style scoped>
+
+@media (max-width: 576px) {
+  .btn-responsive {
+    padding: 0.25rem 0.5rem; /* Smaller padding for smaller screens */
+    font-size: 0.875rem;      /* Smaller font size */
+  }
+}
 
 .custom-select {
   position: relative;
