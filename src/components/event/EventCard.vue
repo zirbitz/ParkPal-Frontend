@@ -36,26 +36,15 @@
         <h5 class="card-title">{{ event.title || 'No title available' }}</h5>
         <h6 class="card-text">
           <router-link :to="{name: 'ParksOverview'}">{{ parkName }}</router-link>
-          <p>{{ fullAddress }}</p>
+          {{ fullAddress }}
         </h6>
         <p class="card-text">{{ event.description || 'No description available' }}</p>
-        <p class="card-text"><strong>Start:</strong> {{ formatDate(event.startTS) }}</p>
-        <p class="card-text"><strong>End:</strong> {{ formatDate(event.endTS) }}</p>
+        <p class="card-text fw-bold">{{ formatDate(event.startTS) }}</p>
         <p class="card-text"><strong>Creator: </strong>
           <a :href="`/userprofile/${event.creatorUserId}`">{{ creatorUsername }}</a>
         </p>
 
-        <!-- Joined users list -->
-        <p class="card-text"><strong>Joined Users:</strong></p>
-        <ul class="text-center">
-          <li class="user-list-item" v-for="(username, index) in event.joinedUserNames || []" :key="username">
-            <a :href="`/userprofile/${event.joinedUserIds[index]}`">{{ username }}</a>
-          </li>
-        </ul>
-
-        <!-- Join event button -->
-        <div class="text-center">
-          <div class="heart-container" ref="heartContainer"></div>
+        <div class="text-center mb-2">
           <a
               href="#"
               class="btn btn-join"
@@ -342,37 +331,23 @@ onMounted(async () => {
 
 <style scoped>
 .card {
-  width: 100%;
-  max-width: 300px; /* Default for larger screens */
-  padding: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: max-width 0.3s ease-in-out;
-}
-
-.card-body {
-  font-size: 1rem;
-}
-
-
-.card {
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 400px; /* You can adjust this based on your desired max card size */
   height: 100%;
-  max-height: 700px; /* Adjust as needed */
+  max-height: 500px; /* Adjust as needed */
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   background-color: #fff;
 }
 
-
 .card-body {
-  padding: 15px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-bottom: 0;
+  padding-top: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -453,20 +428,20 @@ onMounted(async () => {
   display: flex;
   transition: transform 0.5s ease-in-out;
   width: 100%;
-  max-height: 200px;
+  max-height: 150px;
 }
 
 .slide {
   flex: 0 0 100%; /* Each slide takes up 100% of the container width */
   max-width: 100%;
-  max-height: 200px;
+  max-height: 150px;
 }
 
 .event-images {
   width: 100%; /* Ensure images take up the full width of their container */
   height: auto; /* Maintain aspect ratio */
   object-fit: cover;
-  max-height: 200px;
+  max-height: 150px;
 }
 
 
@@ -478,8 +453,6 @@ onMounted(async () => {
   right: 10px;
 }
 
-
-
 .user-list-item {
   list-style: none;
   padding-left: 30px;
@@ -488,15 +461,17 @@ onMounted(async () => {
   background-repeat: no-repeat;
   background-size: 16px 16px;
   background-position: 0 50%;
+  font-size: 0.7rem;
 }
 
 
 /* Initial button styles */
 .btn-join {
+  font-size: 0.8rem;
   transition: background-color 1s ease, transform 1s ease, color 1s ease;
   position: relative;
   overflow: hidden;
-  padding-left: 2.5em; /* Space for icon */
+  padding-left: 2.5em;
   padding-right: 1.5em;
   display: inline-flex;
   align-items: center;
@@ -508,7 +483,6 @@ onMounted(async () => {
 /* Icon styles */
 .btn-join::before {
   content: '\002B'; /* Plus icon (default) */
-  font-family: 'Arial', sans-serif;
   font-weight: bold;
   margin-right: 0.5em;
   transition: transform 1s ease, opacity 1s ease;
@@ -570,12 +544,13 @@ onMounted(async () => {
 }
 
 .badge {
-  font-size: 1.25rem;
+  font-size: 0.8rem;
   font-weight: bolder;
   margin-right: 2rem;
   background: white;
   color: #B00101;
   border: 2px solid #B00101;
   border-radius: 15px;
+  margin-top: 5px;
 }
 </style>
