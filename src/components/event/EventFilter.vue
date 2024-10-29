@@ -42,26 +42,32 @@
     <!-- Error message -->
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-    <div class="row mb-3">
-      <!-- Display EventCard if events are found -->
-      <div class="col-sm-12" v-if="paginatedEvents.length > 0">
-        <div v-for="event in paginatedEvents" :key="event.id">
-          <div class="mb-3">
-            <EventCard :event="event" />
-          </div>
+    <div class="container-fluid mb-3">
+      <h1 class="text-center mt-3">All Events</h1>
+      <hr>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-3 mb-5">
+        <!-- Display EventCard if events are found -->
+        <div v-for="event in paginatedEvents" :key="event.id" class="col d-flex justify-content-center">
+          <EventCard :event="event" />
         </div>
       </div>
     </div>
 
+
     <!-- Pagination Controls -->
     <nav v-if="totalPages > 1" aria-label="Page navigation">
-      <ul class="pagination justify-content-center">
+      <ul class="pagination justify-content-center flex-wrap custom-pagination-spacing">
+        <!-- Previous Button -->
         <li class="page-item" :class="{ disabled: currentPage === 1 }">
           <a class="page-link" href="#" @click.prevent="goToPage(currentPage - 1)">Previous</a>
         </li>
-        <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: page === currentPage }">
-          <a class="page-link" href="#" @click.prevent="goToPage(page)">{{ page }}</a>
+
+        <!-- Current Page Indicator -->
+        <li class="page-item disabled">
+          <span class="page-link">{{ currentPage }} / {{ totalPages }}</span>
         </li>
+
+        <!-- Next Button -->
         <li class="page-item" :class="{ disabled: currentPage === totalPages }">
           <a class="page-link" href="#" @click.prevent="goToPage(currentPage + 1)">Next</a>
         </li>
@@ -71,7 +77,7 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted} from 'vue';
+import {ref, computed, onMounted, onUnmounted} from 'vue';
 import EventCard from "@/components/event/EventCard.vue";
 import axios from 'axios';
 import {API_ROUTES} from "@/apiRoutes.js";
@@ -90,22 +96,20 @@ const allEvents = ref([]);
 const eventTags = ref([]);
 const error = ref(null);
 
-// Pagination state
 const currentPage = ref(1);
-const itemsPerPage = ref(5);  // Number of items per page
+const itemsPerPage = ref(6);
 
-// Computed property to get paginated events
-const paginatedEvents = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = start + itemsPerPage.value;
-  return filteredEvents.value.slice(start, end);
-});
-
-// Computed property to get total number of pages
-const totalPages = computed(() => {
-  return Math.ceil(filteredEvents.value.length / itemsPerPage.value);
-});
-
+// Adjust eventsPerPage based on screen size
+const updateEventsPerPage = () => {
+  const width = window.innerWidth;
+  if (width < 576) {
+    itemsPerPage.value = 1;
+  } else if (width < 768) {
+    itemsPerPage.value = 2;
+  } else {
+    itemsPerPage.value = 3;
+  }
+};
 // Function to fetch all events and then filter them on the frontend
 const fetchFilteredEvents = async () => {
   try {
@@ -208,7 +212,14 @@ const resetFilters = () => {
   currentPage.value = 1; // Reset to the first page
 };
 
-// Pagination control methods
+// Paginated Events
+const paginatedEvents = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return filteredEvents.value.slice(start, start + itemsPerPage.value);
+});
+
+const totalPages = computed(() => Math.ceil(filteredEvents.value.length / itemsPerPage.value) || 1);
+
 const goToPage = (page) => {
   if (page > 0 && page <= totalPages.value) {
     currentPage.value = page;
@@ -219,9 +230,48 @@ const goToPage = (page) => {
 onMounted(() => {
   fetchFilteredEvents();
   fetchEventTags();
+  updateEventsPerPage();
+  window.addEventListener('resize', updateEventsPerPage);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateEventsPerPage);
 });
 </script>
 
 <style scoped>
+.page-link {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 
+.page-link:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.page-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
+}
+
+.page-item.disabled .page-link {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.page-item.active .page-link {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.pagination {
+  font-size: 0.9rem; /* Compact font size */
+}
+
+@media (max-width: 576px) {
+  .custom-pagination-spacing .page-item {
+    margin: 0 5px;
+  }
+}
 </style>

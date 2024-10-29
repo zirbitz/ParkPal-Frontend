@@ -13,7 +13,7 @@ const eventPage = ref(1); // Separate current page for events
 const itemsPerPage = 5; // Adjust number of items per page for users
 const eventsPerPage = 2; // Set number of events per page to 2
 const mediaFiles = ref([]);
-const filesPerPage = 5;
+const filesPerPage = 2;
 
 // Search-related state
 const searchQuery = ref(""); // Store the search query
@@ -283,23 +283,24 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Events Section with Pagination -->
+
     <div class="col">
       <div class="card mb-3">
         <div class="card-body">
           <h3 class="card-title mb-3">All Created Events</h3>
 
           <!-- Event Cards Section -->
-          <div class="row row-cols-1 row-cols-md-1 row-cols-lg-3 g-4 mt-2">
+          <div class="row row-cols-1 row-cols-lg-2 g-4 mt-2 align-items-center">
             <div
                 v-for="(event, index) in paginatedEvents"
                 :key="event.id"
-                class="event-card col mb-4"
-                style="padding-bottom: 2rem; border-bottom: 1px solid #e0e0e0"
+                class="col d-flex flex-column align-items-center"
+                style="padding-bottom: 1rem;"
             >
               <EventCard :event="event" />
-              <div class="d-flex justify-content-between mb-5">
-                <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
+
+              <div class="d-flex justify-content-center mt-2">
+                <button class="btn btn-tertiary btn-sm me-2" @click="updateEvent(index)">Edit</button>
                 <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
               </div>
             </div>
@@ -356,8 +357,8 @@ onMounted(async () => {
                 </tr>
                 </thead>
                 <tbody>
-                <tr class="text-center" v-for="(file, index) in paginatedFiles" :key="index">
-                  <td>
+                <tr v-for="(file, index) in paginatedFiles" :key="index">
+                  <td class="text-center">
                     <img v-if="isImage(file.mimeType)" :src="file.url" class="img-thumbnail" width="100" alt="File Preview">
                     <video v-if="isVideo(file.mimeType)" :src="file.url" class="video-preview" width="100" controls></video>
                   </td>
@@ -460,14 +461,4 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.event-card {
-  width: 33%;
-  margin: 0 auto;
-}
-
-@media (max-width: 768px) {
-  .event-card {
-    width: 100%;
-  }
-}
 </style>

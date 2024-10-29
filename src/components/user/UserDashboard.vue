@@ -385,22 +385,22 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
     </div>
 
-    <div class="col">
-      <div class="card mt-5 mb-2">
+    <div class="col mt-3">
+      <div class="card mb-3">
         <div class="card-body">
           <h2 class="mb-3">My Events</h2>
 
           <!-- Event Cards Section -->
-          <div v-if="events.length > 0" class="row row-cols-1 row-cols-md-2 g-4 mt-3">
+          <div v-if="events.length > 0" class="row row-cols-1 row-cols-md-2 g-4 mt-3 align-items-center">
             <div
                 v-for="(event, index) in paginatedEvents"
                 :key="event.id"
-                class="event-card col mb-4"
-                style="padding-bottom: 2rem; border-bottom: 1px solid #e0e0e0"
+                class="col d-flex flex-column align-items-center"
+                style="padding-bottom: 1rem;"
             >
               <EventCard :event="event" />
-              <div class="d-flex justify-content-between mt-3 mb-3">
-                <button class="btn btn-tertiary btn-sm" @click="updateEvent(index)">Edit</button>
+              <div class="d-flex justify-content-center mt-3 mb-3">
+                <button class="btn btn-tertiary btn-sm me-5" @click="updateEvent(index)">Edit</button>
                 <button class="btn btn-primary btn-sm" @click="deleteEvent(index)">Delete</button>
               </div>
             </div>
