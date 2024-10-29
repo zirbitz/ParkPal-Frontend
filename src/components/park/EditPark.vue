@@ -353,18 +353,23 @@ export default {
 
       if (!this.errors.name) {
         const payload = {
-          ...this.form,
+          id: this.selectedPark.id,
+          name: this.form.name,
+          description: this.form.description,
           address: {
-            ...this.form.address,
+            streetNumber: this.form.address.streetNumber,
+            zipCode: this.form.address.zipCode,
+            city: this.form.address.city,
             country: this.form.address.country.id // Send only country ID
-          }
+          },
+          eventIds: this.selectedPark.eventIds || [], // Include event IDs if they exist
+          mediaFileExternalIds: this.selectedPark.mediaFileExternalIds || [] // Include media IDs if they exist
         };
 
         try {
           const response = await axios.put(`${API_ROUTES.PARKS}/${this.selectedPark.id}`, payload, {withCredentials: true});
           this.showSuccessPopup = true; // Show success popup
           window.scrollTo(0, 0); // Scroll to the top
-
           setTimeout(() => {
             this.showSuccessPopup = false; // Hide popup after 3 seconds
           }, 3000);
