@@ -320,7 +320,8 @@ export default {
           zipCode: park.address?.zipCode || '',
           city: park.address?.city || '',
           country: country || null  // Ensure we assign the correct country object
-        }
+        },
+        eventIds: park.eventIds || []
       };
 
       // Reset validation errors
@@ -351,9 +352,14 @@ export default {
         return; // Exit the method if there are errors
       }
 
+      if (!this.form.eventIds) {
+        this.form.eventIds = []; // Set to empty array if undefined
+      }
+
       if (!this.errors.name) {
         const payload = {
           ...this.form,
+          eventIds: this.form.eventIds, // Include eventIds, even if empty
           address: {
             ...this.form.address,
             country: this.form.address.country.id // Send only country ID
